@@ -16,7 +16,7 @@ lang: es
   </div>
   <h1>NFL Stadium <span>Wallet</span></h1>
   <p class="hero-sub">Guía Oficial de Instalación, Pruebas y Arquitectura — Ecosistema completo de billetera digital para estadios de la NFL sobre Red Hat OpenShift.</p>
-  <p class="hero-meta"><strong>Versión:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro</p>
+  <p class="hero-meta"><strong>Versión:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro &nbsp;|&nbsp; <strong>Infra & Service Mesh:</strong> <a href="https://github.com/panchoraposo">Francisco Raposo</a></p>
 </section>
 
 <div class="toc" markdown="0">
@@ -41,7 +41,6 @@ lang: es
     <li><a href="#observabilidad">Observabilidad</a></li>
     <li><a href="#capturas">Capturas de Pantalla</a></li>
     <li><a href="#canary">Canary / Blue-Green Deployments</a></li>
-    <li><a href="#service-mesh-topology">Service Mesh — Topología y Tráfico</a></li>
     <li><a href="#pruebas">Plan de Pruebas y Validación (QA)</a></li>
     <li><a href="#api-reference">Referencia de API</a></li>
     <li><a href="#troubleshooting">Troubleshooting</a></li>
@@ -277,21 +276,17 @@ Servicios locales:
 - **api-las-vegas-raiders** — Puerto 5003
 - **webapp** — Puerto 5160
 
-[![Podman Compose]({{ '/images/podman.png' | relative_url }})]({{ '/images/podman.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Ejecución del stack con Podman Compose: webapp y tres APIs en contenedores locales.</span>
+[![Podman Compose](docs/images/podman.png)](docs/images/podman.png)<span class="img-caption">Ejecución del stack con Podman Compose: webapp y tres APIs en contenedores locales.</span>
 
 ## 5.2 Desarrollo con Red Hat OpenShift Dev Spaces
 
 El repositorio incluye un **devfile.yaml** para Red Hat OpenShift Dev Spaces, permitiendo desarrollar y testear en un IDE cloud sin instalar .NET ni Node.js localmente.
 
-[![OpenShift Dev Spaces]({{ '/images/devspaces.png' | relative_url }})]({{ '/images/devspaces.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Workspace de OpenShift Dev Spaces con el proyecto NFL-Wallet.</span>
+[![OpenShift Dev Spaces](docs/images/devspaces.png)](docs/images/devspaces.png)<span class="img-caption">Workspace de OpenShift Dev Spaces con el proyecto NFL-Wallet.</span>
 
-[![Dev Spaces Build]({{ '/images/devspaces2.png' | relative_url }})]({{ '/images/devspaces2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Build y ejecución en Dev Spaces: compilar e iniciar la webapp y las APIs desde el workspace.</span>
+[![Dev Spaces Build](docs/images/devspaces2.png)](docs/images/devspaces2.png)<span class="img-caption">Build y ejecución en Dev Spaces: compilar e iniciar la webapp y las APIs desde el workspace.</span>
 
-[![Dev Spaces App]({{ '/images/devspaces3.png' | relative_url }})]({{ '/images/devspaces3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Aplicación ejecutándose desde Dev Spaces: frontend y APIs servidos desde la nube.</span>
+[![Dev Spaces App](docs/images/devspaces3.png)](docs/images/devspaces3.png)<span class="img-caption">Aplicación ejecutándose desde Dev Spaces: frontend y APIs servidos desde la nube.</span>
 
 ## 5.3 Despliegue con Helm Chart
 
@@ -345,8 +340,7 @@ spec:
 
 > Una vez aplicado, ArgoCD desplegará los Deployments, Services, HTTPRoutes, y las políticas de Kuadrant de forma ordenada.
 
-[![OpenShift Topology]({{ '/images/topology.png' | relative_url }})]({{ '/images/topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Vista de topología en OpenShift: webapp → api-customers, api-bills, api-raiders.</span>
+[![OpenShift Topology](docs/images/topology.png)](docs/images/topology.png)<span class="img-caption">Vista de topología en OpenShift: webapp → api-customers, api-bills, api-raiders.</span>
 
 ---
 
@@ -466,11 +460,9 @@ helm upgrade nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
   --set gateway.authPolicy.bills.enabled=true
 ```
 
-[![Connectivity Link]({{ '/images/connectivity-link.png' | relative_url }})]({{ '/images/connectivity-link.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Connectivity Link: Gateway API y HTTPRoutes exponiendo webapp y APIs.</span>
+[![Connectivity Link](docs/images/connectivity-link.png)](docs/images/connectivity-link.png)<span class="img-caption">Connectivity Link: Gateway API y HTTPRoutes exponiendo webapp y APIs.</span>
 
-[![Connectivity Link con Auth]({{ '/images/connectivity-link-auth.png' | relative_url }})]({{ '/images/connectivity-link-auth.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Connectivity Link con Kuadrant AuthPolicy (X-API-Key) y RateLimitPolicy en /api-bills.</span>
+[![Connectivity Link con Auth](docs/images/connectivity-link-auth.png)](docs/images/connectivity-link-auth.png)<span class="img-caption">Connectivity Link con Kuadrant AuthPolicy (X-API-Key) y RateLimitPolicy en /api-bills.</span>
 
 ---
 
@@ -1001,20 +993,15 @@ kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 └── scripts/                                  # force-sync-apps, test-apis, etc.
 ```
 
-[![OpenShift GitOps]({{ '/images/gitops.png' | relative_url }})]({{ '/images/gitops.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
+[![OpenShift GitOps](docs/images/gitops.png)](docs/images/gitops.png)<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
 
-[![GitOps Applications]({{ '/images/gitops1.png' | relative_url }})]({{ '/images/gitops1.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ArgoCD — Detalle de las Applications generadas por el ApplicationSet.</span>
+[![GitOps Applications](docs/images/gitops1.png)](docs/images/gitops1.png)<span class="img-caption">ArgoCD — Detalle de las Applications generadas por el ApplicationSet.</span>
 
-[![ACM Topology]({{ '/images/ACM3.png' | relative_url }})]({{ '/images/ACM3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
+[![ACM Topology](docs/images/ACM3.png)](docs/images/ACM3.png)<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
 
-[![ACM Applications]({{ '/images/ACM4.png' | relative_url }})]({{ '/images/ACM4.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas (dev/test/prod × east/west).</span>
+[![ACM Applications](docs/images/ACM4.png)](docs/images/ACM4.png)<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas (dev/test/prod × east/west).</span>
 
-[![ACM Apps Overview]({{ '/images/acm-apps.png' | relative_url }})]({{ '/images/acm-apps.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Vista general de las aplicaciones desplegadas en los managed clusters.</span>
+[![ACM Apps Overview](docs/images/acm-apps.png)](docs/images/acm-apps.png)<span class="img-caption">ACM — Vista general de las aplicaciones desplegadas en los managed clusters.</span>
 
 ---
 
@@ -1031,17 +1018,13 @@ La gobernanza de las APIs se centraliza mediante **Kuadrant** en el backend y **
 5. **Aprobación y Aprovisionamiento:** Kuadrant orquesta la creación de la credencial (API Key o Token OIDC)
 6. **Enforcement:** El Gateway API intercepta, valida la credencial y aplica el límite de 500 peticiones/día
 
-[![RHDH Kuadrant Policies]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }})]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Red Hat Developer Hub — Plugin Kuadrant: vista de Policies para nfl-wallet-api-customers. PlanPolicy y AuthPolicy descubiertas. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
+[![RHDH Kuadrant Policies](docs/images/rhdh-kuadrant-policies.png)](docs/images/rhdh-kuadrant-policies.png)<span class="img-caption">Red Hat Developer Hub — Plugin Kuadrant: vista de Policies para nfl-wallet-api-customers. PlanPolicy y AuthPolicy descubiertas. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
 
-[![RHDH API Definition]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Red Hat Developer Hub — Definición de API: NFL Wallet - Customers API v1 (OAS 3.0). Endpoints GET /Customers y GET /Customers/{id} con botón Authorize para autenticación.</span>
+[![RHDH API Definition](docs/images/rhdh-kuadrant-api-definition.png)](docs/images/rhdh-kuadrant-api-definition.png)<span class="img-caption">Red Hat Developer Hub — Definición de API: NFL Wallet - Customers API v1 (OAS 3.0). Endpoints GET /Customers y GET /Customers/{id} con botón Authorize para autenticación.</span>
 
-[![RHDH Request Access]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }})]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Red Hat Developer Hub — Flujo de solicitud de acceso: modal "Request API Access" con selección de Tier (silver - 500 per daily) y campo de Use Case. Owner: Maximiliano Pizarro, Lifecycle: production.</span>
+[![RHDH Request Access](docs/images/rhdh-kuadrant-request-access.png)](docs/images/rhdh-kuadrant-request-access.png)<span class="img-caption">Red Hat Developer Hub — Flujo de solicitud de acceso: modal "Request API Access" con selección de Tier (silver - 500 per daily) y campo de Use Case. Owner: Maximiliano Pizarro, Lifecycle: production.</span>
 
-[![RHDH API Keys]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Red Hat Developer Hub — API Keys aprovisionadas: Tier silver aprobado (2/3/2026), API Key generada con ejemplos de uso en cURL, Node.js, Python y Go.</span>
+[![RHDH API Keys](docs/images/rhdh-kuadrant-api-keys.png)](docs/images/rhdh-kuadrant-api-keys.png)<span class="img-caption">Red Hat Developer Hub — API Keys aprovisionadas: Tier silver aprobado (2/3/2026), API Key generada con ejemplos de uso en cURL, Node.js, Python y Go.</span>
 
 ## 10.2 Uso de la API Key desde Developer Hub
 
@@ -1175,14 +1158,11 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 | `./observability/run-tests.sh prod` | Solo prod (con API_KEY_PROD) |
 | `./observability/run-tests.sh loop` | Loop continuo: dev + test + prod |
 
-[![Grafana Dashboard]({{ '/images/grafana-dashboard.png' | relative_url }})]({{ '/images/grafana-dashboard.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Dashboard de Grafana "NFL Wallet – All environments" con métricas: request rate, response codes, duration, error rate.</span>
+[![Grafana Dashboard](docs/images/grafana-dashboard.png)](docs/images/grafana-dashboard.png)<span class="img-caption">Dashboard de Grafana "NFL Wallet – All environments" con métricas: request rate, response codes, duration, error rate.</span>
 
-[![Kiali Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Topología del Service Mesh federado mostrando flujo de tráfico entre namespaces (dev/test/prod).</span>
+[![Kiali Topology](docs/images/service-mesh-kiali-topology.png)](docs/images/service-mesh-kiali-topology.png)<span class="img-caption">Kiali — Topología del Service Mesh federado mostrando flujo de tráfico entre namespaces (dev/test/prod).</span>
 
-[![Kiali Service Graph]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-cluster (East/West), gateways y waypoints.</span>
+[![Kiali Service Graph](docs/images/service-mesh-kiali.png)](docs/images/service-mesh-kiali.png)<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-cluster (East/West), gateways y waypoints.</span>
 
 ---
 
@@ -1190,99 +1170,69 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 
 ## 12.1 Aplicación Wallet
 
-[![Wallet Landing]({{ '/images/walletlanding.png' | relative_url }})]({{ '/images/walletlanding.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Wallet Landing Page — Punto de entrada de la aplicación web NFL Stadium Wallet.</span>
+[![Wallet Landing](docs/images/walletlanding.png)](docs/images/walletlanding.png)<span class="img-caption">Wallet Landing Page — Punto de entrada de la aplicación web NFL Stadium Wallet.</span>
 
-[![Customer List]({{ '/images/wallet.png' | relative_url }})]({{ '/images/wallet.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Lista de Clientes — Seleccionar un cliente para ver sus wallets por equipo.</span>
+[![Customer List](docs/images/wallet.png)](docs/images/wallet.png)<span class="img-caption">Lista de Clientes — Seleccionar un cliente para ver sus wallets por equipo.</span>
 
-[![Wallet Balances]({{ '/images/wallet2.png' | relative_url }})]({{ '/images/wallet2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Balances de Wallets — Buffalo Bills y Las Vegas Raiders: saldos y transacciones.</span>
+[![Wallet Balances](docs/images/wallet2.png)](docs/images/wallet2.png)<span class="img-caption">Balances de Wallets — Buffalo Bills y Las Vegas Raiders: saldos y transacciones.</span>
 
-[![QR Payment]({{ '/images/wallet3.png' | relative_url }})]({{ '/images/wallet3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Flujo de Pago QR — Pago desde una wallet de equipo.</span>
+[![QR Payment](docs/images/wallet3.png)](docs/images/wallet3.png)<span class="img-caption">Flujo de Pago QR — Pago desde una wallet de equipo.</span>
 
-[![Load Balance]({{ '/images/wallet4.png' | relative_url }})]({{ '/images/wallet4.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Carga de Saldo — Agregar fondos a una wallet de equipo.</span>
+[![Load Balance](docs/images/wallet4.png)](docs/images/wallet4.png)<span class="img-caption">Carga de Saldo — Agregar fondos a una wallet de equipo.</span>
 
 ## 12.2 Plataforma y Observabilidad
 
-[![Grafana Dashboard]({{ '/images/grafana-dashboard.png' | relative_url }})]({{ '/images/grafana-dashboard.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Grafana — Dashboard "NFL Wallet – All environments": request rate, response codes, duration, error rate por ambiente.</span>
+[![Grafana Dashboard](docs/images/grafana-dashboard.png)](docs/images/grafana-dashboard.png)<span class="img-caption">Grafana — Dashboard "NFL Wallet – All environments": request rate, response codes, duration, error rate por ambiente.</span>
 
-[![Service Mesh Grafana]({{ '/images/service-mesh-grafana.png' | relative_url }})]({{ '/images/service-mesh-grafana.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-namespace (dev/test/prod) y métricas HTTP.</span>
+[![Service Mesh Grafana](docs/images/service-mesh-grafana.png)](docs/images/service-mesh-grafana.png)<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-namespace (dev/test/prod) y métricas HTTP.</span>
 
-[![Kiali Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Topología detallada del Service Mesh con leyenda de nodos, workloads y servicios.</span>
+[![Kiali Topology](docs/images/service-mesh-kiali-topology.png)](docs/images/service-mesh-kiali-topology.png)<span class="img-caption">Kiali — Topología detallada del Service Mesh con leyenda de nodos, workloads y servicios.</span>
 
-[![Kiali Multi-Cluster]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Service Graph multi-cluster mostrando tráfico entre East y West con gateways Istio.</span>
+[![Kiali Multi-Cluster](docs/images/service-mesh-kiali.png)](docs/images/service-mesh-kiali.png)<span class="img-caption">Kiali — Service Graph multi-cluster mostrando tráfico entre East y West con gateways Istio.</span>
 
-[![Service Mesh Overview]({{ '/images/service-mesh.png' | relative_url }})]({{ '/images/service-mesh.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">OpenShift Console — Vista del Service Mesh: control planes, gateways, waypoints y componentes.</span>
+[![Service Mesh Overview](docs/images/service-mesh.png)](docs/images/service-mesh.png)<span class="img-caption">OpenShift Console — Vista del Service Mesh: control planes, gateways, waypoints y componentes.</span>
 
-[![API Customers]({{ '/images/api-customers.png' | relative_url }})]({{ '/images/api-customers.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">API Customers — Swagger UI del servicio de clientes.</span>
+[![API Customers](docs/images/api-customers.png)](docs/images/api-customers.png)<span class="img-caption">API Customers — Swagger UI del servicio de clientes.</span>
 
-[![API Bills]({{ '/images/api-bills.png' | relative_url }})]({{ '/images/api-bills.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">API Bills — Swagger UI del servicio de Buffalo Bills wallet.</span>
+[![API Bills](docs/images/api-bills.png)](docs/images/api-bills.png)<span class="img-caption">API Bills — Swagger UI del servicio de Buffalo Bills wallet.</span>
 
 ## 12.5 Red Hat Developer Hub — Plugin Kuadrant {#rhdh-screenshots}
 
-[![RHDH Policies]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }})]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Policies: PlanPolicy y AuthPolicy descubiertas para nfl-wallet-api-customers. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
+[![RHDH Policies](docs/images/rhdh-kuadrant-policies.png)](docs/images/rhdh-kuadrant-policies.png)<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Policies: PlanPolicy y AuthPolicy descubiertas para nfl-wallet-api-customers. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
 
-[![RHDH API Definition]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Definition: NFL Wallet - Customers API v1 (OAS 3.0) con endpoints documentados y selector de servidor por ambiente.</span>
+[![RHDH API Definition](docs/images/rhdh-kuadrant-api-definition.png)](docs/images/rhdh-kuadrant-api-definition.png)<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Definition: NFL Wallet - Customers API v1 (OAS 3.0) con endpoints documentados y selector de servidor por ambiente.</span>
 
-[![RHDH Request Access]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }})]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Modal de solicitud de acceso: selección de Tier silver (500 per daily), campo de Use Case y botón Submit Request.</span>
+[![RHDH Request Access](docs/images/rhdh-kuadrant-request-access.png)](docs/images/rhdh-kuadrant-request-access.png)<span class="img-caption">RHDH Kuadrant Plugin — Modal de solicitud de acceso: selección de Tier silver (500 per daily), campo de Use Case y botón Submit Request.</span>
 
-[![RHDH API Keys]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — API Keys aprovisionadas con Tier silver aprobado, clave generada y ejemplos de código en cURL, Node.js, Python y Go.</span>
+[![RHDH API Keys](docs/images/rhdh-kuadrant-api-keys.png)](docs/images/rhdh-kuadrant-api-keys.png)<span class="img-caption">RHDH Kuadrant Plugin — API Keys aprovisionadas con Tier silver aprobado, clave generada y ejemplos de código en cURL, Node.js, Python y Go.</span>
 
-[![ACM Observability]({{ '/images/acm-observability-east-west.png' | relative_url }})]({{ '/images/acm-observability-east-west.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — ApplicationSet observability-east-west: topología con Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace y Route para observabilidad centralizada.</span>
+[![ACM Observability](docs/images/acm-observability-east-west.png)](docs/images/acm-observability-east-west.png)<span class="img-caption">ACM — ApplicationSet observability-east-west: topología con Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace y Route para observabilidad centralizada.</span>
 
-[![Grafana Multi-Cluster]({{ '/images/grafana-multi-cluster.png' | relative_url }})]({{ '/images/grafana-multi-cluster.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Grafana Multi-Cluster — Dashboard "NFL Wallet - All environments" con filtro por cluster (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate y request rate por servicio.</span>
+[![Grafana Multi-Cluster](docs/images/grafana-multi-cluster.png)](docs/images/grafana-multi-cluster.png)<span class="img-caption">Grafana Multi-Cluster — Dashboard "NFL Wallet - All environments" con filtro por cluster (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate y request rate por servicio.</span>
 
-[![GitOps ArgoCD]({{ '/images/gitops.png' | relative_url }})]({{ '/images/gitops.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
+[![GitOps ArgoCD](docs/images/gitops.png)](docs/images/gitops.png)<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
 
-[![ACM Topology]({{ '/images/ACM3.png' | relative_url }})]({{ '/images/ACM3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
+[![ACM Topology](docs/images/ACM3.png)](docs/images/ACM3.png)<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
 
-[![ACM Applications]({{ '/images/ACM4.png' | relative_url }})]({{ '/images/ACM4.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas.</span>
+[![ACM Applications](docs/images/ACM4.png)](docs/images/ACM4.png)<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas.</span>
 
-[![ACM Overview]({{ '/images/ACM.png' | relative_url }})]({{ '/images/ACM.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Vista general del Advanced Cluster Management.</span>
+[![ACM Overview](docs/images/ACM.png)](docs/images/ACM.png)<span class="img-caption">ACM — Vista general del Advanced Cluster Management.</span>
 
-[![ACM Detail]({{ '/images/ACM2.png' | relative_url }})]({{ '/images/ACM2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Detalle de clústeres managed y su estado.</span>
+[![ACM Detail](docs/images/ACM2.png)](docs/images/ACM2.png)<span class="img-caption">ACM — Detalle de clústeres managed y su estado.</span>
 
-[![Observability]({{ '/images/observability.png' | relative_url }})]({{ '/images/observability.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Observabilidad — Consola OpenShift con métricas del monitoring stack.</span>
+[![Observability](docs/images/observability.png)](docs/images/observability.png)<span class="img-caption">Observabilidad — Consola OpenShift con métricas del monitoring stack.</span>
 
-[![Observability Metrics]({{ '/images/observability2.png' | relative_url }})]({{ '/images/observability2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Métricas del gateway (request rate, success y error rates) disponibles tras configurar PodMonitor/ServiceMonitor.</span>
+[![Observability Metrics](docs/images/observability2.png)](docs/images/observability2.png)<span class="img-caption">Métricas del gateway (request rate, success y error rates) disponibles tras configurar PodMonitor/ServiceMonitor.</span>
 
-[![Observability Detail]({{ '/images/observability3.png' | relative_url }})]({{ '/images/observability3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Vista detallada de observabilidad con métricas Istio/Envoy del gateway NFL-Wallet.</span>
+[![Observability Detail](docs/images/observability3.png)](docs/images/observability3.png)<span class="img-caption">Vista detallada de observabilidad con métricas Istio/Envoy del gateway NFL-Wallet.</span>
 
-[![Traffic Analysis]({{ '/images/traffic-analysis.png' | relative_url }})]({{ '/images/traffic-analysis.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Análisis de tráfico — Flujo de requests, latencia y códigos de respuesta.</span>
+[![Traffic Analysis](docs/images/traffic-analysis.png)](docs/images/traffic-analysis.png)<span class="img-caption">Análisis de tráfico — Flujo de requests, latencia y códigos de respuesta.</span>
 
-[![Jaeger Traces]({{ '/images/jaeger-traces.png' | relative_url }})]({{ '/images/jaeger-traces.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Jaeger — Trazas distribuidas de los servicios del NFL Wallet.</span>
+[![Jaeger Traces](docs/images/jaeger-traces.png)](docs/images/jaeger-traces.png)<span class="img-caption">Jaeger — Trazas distribuidas de los servicios del NFL Wallet.</span>
 
-[![Architecture Workflow]({{ '/images/architecture-workflow.png' | relative_url }})]({{ '/images/architecture-workflow.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Diagrama de workflow de la arquitectura GitOps completa.</span>
+[![Architecture Workflow](docs/images/architecture-workflow.png)](docs/images/architecture-workflow.png)<span class="img-caption">Diagrama de workflow de la arquitectura GitOps completa.</span>
 
-[![High Level Architecture]({{ '/images/high-level-architecture.png' | relative_url }})]({{ '/images/high-level-architecture.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Arquitectura de alto nivel del ecosistema NFL Wallet.</span>
+[![High Level Architecture](docs/images/high-level-architecture.png)](docs/images/high-level-architecture.png)<span class="img-caption">Arquitectura de alto nivel del ecosistema NFL Wallet.</span>
 
 ---
 
@@ -1294,11 +1244,9 @@ El overlay de producción incluye una **Route canary** adicional (`nfl-wallet-ca
 
 Las siguientes capturas de Grafana muestran el comportamiento del tráfico durante un despliegue canary, donde se observa la distribución de requests entre los ambientes dev, test y prod:
 
-[![Canary Blue-Green - Total Requests]({{ '/images/canary-blue-green.png' | relative_url }})]({{ '/images/canary-blue-green.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Total de requests (última hora) por ambiente durante un despliegue canary — nfl-wallet-dev (verde), nfl-wallet-prod (amarillo), nfl-wallet-test (azul). Se observa el incremento gradual de tráfico hacia producción.</span>
+[![Canary Blue-Green - Total Requests](docs/images/canary-blue-green.png)](docs/images/canary-blue-green.png)<span class="img-caption">Total de requests (última hora) por ambiente durante un despliegue canary — nfl-wallet-dev (verde), nfl-wallet-prod (amarillo), nfl-wallet-test (azul). Se observa el incremento gradual de tráfico hacia producción.</span>
 
-[![Canary Blue-Green - Request Rate]({{ '/images/canary-blue-green-2.png' | relative_url }})]({{ '/images/canary-blue-green-2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Request rate por ambiente y servicio durante canary — Se visualiza cómo api-customers (dev), gateway-istio (prod/test) y webapp distribuyen el tráfico entre versiones.</span>
+[![Canary Blue-Green - Request Rate](docs/images/canary-blue-green-2.png)](docs/images/canary-blue-green-2.png)<span class="img-caption">Request rate por ambiente y servicio durante canary — Se visualiza cómo api-customers (dev), gateway-istio (prod/test) y webapp distribuyen el tráfico entre versiones.</span>
 
 ### Definición del Canary con HTTPRoutes
 
@@ -1405,49 +1353,6 @@ spec:
 ```
 
 Para cambiar el dominio, editar el patch en cada overlay correspondiente.
-
----
-
-# 12.4 Service Mesh — Topología y Tráfico {#service-mesh-topology}
-
-Las siguientes capturas demuestran la topología del Service Mesh y el flujo de tráfico real a través de los componentes del ecosistema NFL Wallet.
-
-### Kiali — Topología Multi-Namespace
-
-[![Kiali Multi-Namespace Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali Traffic Graph — Vista de topología con 3 namespaces (nfl-wallet-prod, nfl-wallet-dev, nfl-wallet-test). Se muestran 5 apps, 10 servicios y 15 edges. La barra de estado HTTP muestra la distribución de códigos de respuesta (OK, 3xx, 4xx, 5xx).</span>
-
-En esta vista se observa:
-- **webapp**, **api-customers**, **api-bills**, **api-raiders** como workloads en cada namespace
-- **nfl-wallet-gateway-istio** como punto de ingress de tráfico
-- Conexiones entre servicios mostrando el flujo L7 a través de los Waypoint proxies
-- Distribución de códigos de respuesta HTTP en tiempo real
-
-### Kiali — Service Graph Multi-Cluster (East/West)
-
-[![Kiali Service Graph]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali Service Graph — Vista multi-cluster mostrando servicios federados entre clústeres East y West. 31 servicios, 5 workloads, 7 edges. Los gateways Istio de cada namespace gestionan el tráfico de ingress.</span>
-
-Se visualiza la federación cross-cluster:
-- Clúster **East** (izquierda): namespaces dev, test, prod con sus gateways y servicios
-- Clúster **West** (derecha): namespaces dev, test, prod replicados
-- Comunicación cross-cluster via **HBONE** para servicios federados
-
-### Kiali — Grafo de Servicios con Métricas
-
-[![Service Mesh Grafana View]({{ '/images/service-mesh-grafana.png' | relative_url }})]({{ '/images/service-mesh-grafana.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Versioned app graph con métricas HTTP en tiempo real: 5 apps, 9 servicios, 14 edges. Se muestran los nodos webapp, api-raiders, api-bills, api-customers con sus gateways por namespace.</span>
-
-### OpenShift Console — Vista del Mesh
-
-[![Service Mesh Console]({{ '/images/service-mesh.png' | relative_url }})]({{ '/images/service-mesh.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Consola de OpenShift — Service Mesh overview mostrando: 1 Cluster (Kubernetes v1.33.6), 1 ControlPlane (Istio ambient v1.27.3, 4 dataplane namespaces), 4 Gateways (neuraIbank-gateway + 3 nfl-wallet-gateway), 3 Waypoints (nfl-wallet-waypoint en dev/test/prod), 1 Kiali instance. Componentes del plano de datos: Jaeger, Prometheus, Grafana, ztunnel, istio-system.</span>
-
-Esta vista demuestra la integración completa del Service Mesh 3 en Ambient Mode:
-- **Control Plane:** Istio en modo ambient con 4 namespaces de dataplane
-- **Gateways:** 4 gateways (uno por namespace + shared)
-- **Waypoints:** 3 waypoint proxies (uno por ambiente: dev, test, prod)
-- **Observabilidad integrada:** Jaeger, Prometheus y Grafana como componentes del mesh
 
 ---
 
@@ -1627,6 +1532,6 @@ helm install nfl-wallet nfl-wallet/nfl-wallet -n nfl-wallet
   <p style="font-size:0.9rem; color:var(--rh-gray-500);">
     <strong>NFL Stadium Wallet v2.0</strong> — Documentación generada para GitHub Pages<br>
     Stack: OpenShift 4.20+ · GitOps (ArgoCD) · OSSM 3.2 (Ambient Mode) · Kuadrant · Gateway API · RHDH · Vue.js · .NET 8<br>
-    Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a>
+    Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a> · Infra & Service Mesh: <a href="https://github.com/panchoraposo">Francisco Raposo</a>
   </p>
 </div>

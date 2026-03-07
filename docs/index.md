@@ -16,7 +16,7 @@ lang: es
   </div>
   <h1>NFL Stadium <span>Wallet</span></h1>
   <p class="hero-sub">Guía Oficial de Instalación, Pruebas y Arquitectura — Ecosistema completo de billetera digital para estadios de la NFL sobre Red Hat OpenShift.</p>
-  <p class="hero-meta"><strong>Versión:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro</p>
+  <p class="hero-meta"><strong>Versión:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro &nbsp;|&nbsp; <strong>Infra & Service Mesh:</strong> <a href="https://github.com/panchoraposo">Francisco Raposo</a></p>
 </section>
 
 <div class="toc" markdown="0">
@@ -41,7 +41,6 @@ lang: es
     <li><a href="#observabilidad">Observabilidad</a></li>
     <li><a href="#capturas">Capturas de Pantalla</a></li>
     <li><a href="#canary">Canary / Blue-Green Deployments</a></li>
-    <li><a href="#service-mesh-topology">Service Mesh — Topología y Tráfico</a></li>
     <li><a href="#pruebas">Plan de Pruebas y Validación (QA)</a></li>
     <li><a href="#api-reference">Referencia de API</a></li>
     <li><a href="#troubleshooting">Troubleshooting</a></li>
@@ -1408,49 +1407,6 @@ Para cambiar el dominio, editar el patch en cada overlay correspondiente.
 
 ---
 
-# 12.4 Service Mesh — Topología y Tráfico {#service-mesh-topology}
-
-Las siguientes capturas demuestran la topología del Service Mesh y el flujo de tráfico real a través de los componentes del ecosistema NFL Wallet.
-
-### Kiali — Topología Multi-Namespace
-
-[![Kiali Multi-Namespace Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali Traffic Graph — Vista de topología con 3 namespaces (nfl-wallet-prod, nfl-wallet-dev, nfl-wallet-test). Se muestran 5 apps, 10 servicios y 15 edges. La barra de estado HTTP muestra la distribución de códigos de respuesta (OK, 3xx, 4xx, 5xx).</span>
-
-En esta vista se observa:
-- **webapp**, **api-customers**, **api-bills**, **api-raiders** como workloads en cada namespace
-- **nfl-wallet-gateway-istio** como punto de ingress de tráfico
-- Conexiones entre servicios mostrando el flujo L7 a través de los Waypoint proxies
-- Distribución de códigos de respuesta HTTP en tiempo real
-
-### Kiali — Service Graph Multi-Cluster (East/West)
-
-[![Kiali Service Graph]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali Service Graph — Vista multi-cluster mostrando servicios federados entre clústeres East y West. 31 servicios, 5 workloads, 7 edges. Los gateways Istio de cada namespace gestionan el tráfico de ingress.</span>
-
-Se visualiza la federación cross-cluster:
-- Clúster **East** (izquierda): namespaces dev, test, prod con sus gateways y servicios
-- Clúster **West** (derecha): namespaces dev, test, prod replicados
-- Comunicación cross-cluster via **HBONE** para servicios federados
-
-### Kiali — Grafo de Servicios con Métricas
-
-[![Service Mesh Grafana View]({{ '/images/service-mesh-grafana.png' | relative_url }})]({{ '/images/service-mesh-grafana.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Versioned app graph con métricas HTTP en tiempo real: 5 apps, 9 servicios, 14 edges. Se muestran los nodos webapp, api-raiders, api-bills, api-customers con sus gateways por namespace.</span>
-
-### OpenShift Console — Vista del Mesh
-
-[![Service Mesh Console]({{ '/images/service-mesh.png' | relative_url }})]({{ '/images/service-mesh.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Consola de OpenShift — Service Mesh overview mostrando: 1 Cluster (Kubernetes v1.33.6), 1 ControlPlane (Istio ambient v1.27.3, 4 dataplane namespaces), 4 Gateways (neuraIbank-gateway + 3 nfl-wallet-gateway), 3 Waypoints (nfl-wallet-waypoint en dev/test/prod), 1 Kiali instance. Componentes del plano de datos: Jaeger, Prometheus, Grafana, ztunnel, istio-system.</span>
-
-Esta vista demuestra la integración completa del Service Mesh 3 en Ambient Mode:
-- **Control Plane:** Istio en modo ambient con 4 namespaces de dataplane
-- **Gateways:** 4 gateways (uno por namespace + shared)
-- **Waypoints:** 3 waypoint proxies (uno por ambiente: dev, test, prod)
-- **Observabilidad integrada:** Jaeger, Prometheus y Grafana como componentes del mesh
-
----
-
 # 13. Plan de Pruebas y Validación (QA) {#pruebas}
 
 Una vez finalizada la sincronización de ArgoCD, el equipo de QA u Operaciones debe ejecutar el siguiente plan de pruebas para certificar el despliegue.
@@ -1627,6 +1583,6 @@ helm install nfl-wallet nfl-wallet/nfl-wallet -n nfl-wallet
   <p style="font-size:0.9rem; color:var(--rh-gray-500);">
     <strong>NFL Stadium Wallet v2.0</strong> — Documentación generada para GitHub Pages<br>
     Stack: OpenShift 4.20+ · GitOps (ArgoCD) · OSSM 3.2 (Ambient Mode) · Kuadrant · Gateway API · RHDH · Vue.js · .NET 8<br>
-    Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a>
+    Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a> · Infra & Service Mesh: <a href="https://github.com/panchoraposo">Francisco Raposo</a>
   </p>
 </div>
