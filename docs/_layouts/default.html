@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;900&family=Red+Hat+Text:wght@400;500;600&family=Red+Hat+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/x-icon" href="{{ '/images/favicon.ico' | relative_url }}">
   {% seo %}
 </head>
 <body>
@@ -16,10 +17,7 @@
   <header class="site-header">
     <div class="header-inner">
       <a href="{{ '/' | relative_url }}" class="site-brand">
-        <svg class="rh-logo" viewBox="0 0 613 145" xmlns="http://www.w3.org/2000/svg" aria-label="Red Hat">
-          <path d="M127.47 83.49c12.51 0 30.61-2.58 30.61-17.46a14 14 0 00-.31-3.42l-7.45-32.36c-1.72-7.12-3.23-10.35-15.73-16.6C124.89 8.69 103.76.5 97.51.5 91.69.5 90 8 83.06 8c-6.68 0-11.64-5.6-17.89-5.6-6 0-9.91 4.09-12.93 12.5 0 0-8.41 23.72-9.49 27.16A6.43 6.43 0 0042.53 44c0 9.22 36.3 39.45 84.94 39.45M127.47 83.49zM55.73 83.49a155.71 155.71 0 0016.4-1.06c2.43-.32 3.91-.79 3.91-2a1.63 1.63 0 00-.11-.55l-9.31-40.09c-1.1-5.17-4.68-11-14.87-11-14.21 0-25.77 10-25.77 23.31 0 16.74 14.68 31.39 29.75 31.39" fill="#cc0000"/>
-          <path d="M127.47 83.49c-48.64 0-84.94-30.23-84.94-39.45a6.43 6.43 0 01.22-1.94c-1 3.07-1.58 5.38-1.58 7.26 0 18.66 39.14 50.63 86.3 50.63 14.48 0 33.28-3.5 33.28-20 0-5.55-2.15-9.44-4.23-13.94a34 34 0 01-.31 3.42c0 14.88-18.1 14.02-28.74 14.02" fill="#2d2d2d"/>
-        </svg>
+        <img class="rh-logo" src="{{ '/images/favicon.ico' | relative_url }}" alt="NFL Stadium Wallet" style="height:32px;width:32px;">
         <span class="site-title">{{ site.title }}</span>
       </a>
       <div class="header-right">
@@ -70,10 +68,7 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <svg class="rh-logo-footer" viewBox="0 0 613 145" xmlns="http://www.w3.org/2000/svg" aria-label="Red Hat">
-          <path d="M127.47 83.49c12.51 0 30.61-2.58 30.61-17.46a14 14 0 00-.31-3.42l-7.45-32.36c-1.72-7.12-3.23-10.35-15.73-16.6C124.89 8.69 103.76.5 97.51.5 91.69.5 90 8 83.06 8c-6.68 0-11.64-5.6-17.89-5.6-6 0-9.91 4.09-12.93 12.5 0 0-8.41 23.72-9.49 27.16A6.43 6.43 0 0042.53 44c0 9.22 36.3 39.45 84.94 39.45M127.47 83.49zM55.73 83.49a155.71 155.71 0 0016.4-1.06c2.43-.32 3.91-.79 3.91-2a1.63 1.63 0 00-.11-.55l-9.31-40.09c-1.1-5.17-4.68-11-14.87-11-14.21 0-25.77 10-25.77 23.31 0 16.74 14.68 31.39 29.75 31.39" fill="#cc0000"/>
-          <path d="M127.47 83.49c-48.64 0-84.94-30.23-84.94-39.45a6.43 6.43 0 01.22-1.94c-1 3.07-1.58 5.38-1.58 7.26 0 18.66 39.14 50.63 86.3 50.63 14.48 0 33.28-3.5 33.28-20 0-5.55-2.15-9.44-4.23-13.94a34 34 0 01-.31 3.42c0 14.88-18.1 14.02-28.74 14.02" fill="#fff"/>
-        </svg>
+        <img class="rh-logo-footer" src="{{ '/images/favicon.ico' | relative_url }}" alt="NFL Stadium Wallet" style="height:28px;width:28px;">
         <p>NFL Stadium Wallet v{{ site.version }} &mdash; {{ site.author }}</p>
       </div>
       <div class="footer-links">
@@ -86,6 +81,7 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <script>
     document.getElementById('navToggle').addEventListener('click', function() {
       document.getElementById('mainNav').classList.toggle('open');
@@ -94,6 +90,16 @@
       a.setAttribute('target', '_blank');
       a.setAttribute('rel', 'noopener');
     });
+    // Mermaid: convert ```mermaid code blocks to renderable divs
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    document.querySelectorAll('code.language-mermaid').forEach(function(codeEl) {
+      var pre = codeEl.parentElement;
+      var div = document.createElement('div');
+      div.className = 'mermaid';
+      div.textContent = codeEl.textContent;
+      pre.parentNode.replaceChild(div, pre);
+    });
+    mermaid.run();
   </script>
 </body>
 </html>

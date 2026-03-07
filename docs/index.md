@@ -16,7 +16,7 @@ lang: es
   </div>
   <h1>NFL Stadium <span>Wallet</span></h1>
   <p class="hero-sub">Guía Oficial de Instalación, Pruebas y Arquitectura — Ecosistema completo de billetera digital para estadios de la NFL sobre Red Hat OpenShift.</p>
-  <p class="hero-meta"><strong>Versión:</strong> 2.0 &nbsp;|&nbsp; <strong>Estado:</strong> Producción &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro</p>
+  <p class="hero-meta"><strong>Versión:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro</p>
 </section>
 
 <div class="toc" markdown="0">
@@ -106,44 +106,45 @@ La solución se estructura en un modelo moderno de tres capas:
 
 ## 2.2 Diagrama de Arquitectura de Red y Service Mesh
 
-<div class="diagram-box">
-                    ┌─────────────────────────────────────────────┐
-                    │         Plano de Gestión                     │
-                    │  ┌──────────────────┐ ┌──────────────────┐  │
-                    │  │ Red Hat Developer │ │ OpenShift GitOps │  │
-                    │  │ Hub (API Portal) │ │ (Sincronización) │  │
-                    │  └──────────────────┘ └──────────────────┘  │
-                    └─────────────────────────────────────────────┘
-                                      │
-              ┌───────────────────────┼───────────────────────┐
-              ▼                       ▼                       ▼
-    ┌──────────────────────────────────────────────────────────┐
-    │  OpenShift Cluster (Namespace: nfl-wallet)                │
-    │  ┌──────────────────────────────────────────────────────┐│
-    │  │  Gateway API / Kuadrant Ingress                      ││
-    │  │  ┌─────────────────────────────────┐                 ││
-    │  │  │  OSSM3 Ambient Mesh (Zero-Trust)│                 ││
-    │  │  │  ┌───────┐  ┌────────────────┐  │                 ││
-    │  │  │  │ztunnel│  │Waypoint Proxy  │  │                 ││
-    │  │  │  │ L4/mTLS│  │ L7 Auth/Route │  │                 ││
-    │  │  │  └───┬───┘  └───────┬────────┘  │                 ││
-    │  │  │      │              │            │                 ││
-    │  │  │  ┌───┴──┐  ┌───────┴────────┐   │                 ││
-    │  │  │  │webapp│  │api-customers   │   │                 ││
-    │  │  │  │Vue.js│  │api-bills       │   │                 ││
-    │  │  │  │:5173 │  │api-raiders     │   │                 ││
-    │  │  │  └──────┘  │  .NET 8 :8080  │   │                 ││
-    │  │  │            └────────┬───────┘   │                 ││
-    │  │  └─────────────────────┼───────────┘                 ││
-    │  └────────────────────────┼──────────────────────────────┘│
-    └───────────────────────────┼────────────────────────────────┘
-                                │ Egress Traffic
-                                ▼
-                    ┌───────────────────────┐
-                    │  API Pública de ESPN   │
-                    │  Scoreboards & Stats   │
-                    └───────────────────────┘
-</div>
+```mermaid
+graph TD
+    subgraph Plano_de_Gestión["Plano de Gestión"]
+        DevHub["Red Hat Developer Hub<br/>API Portal"]
+        Argo["OpenShift GitOps<br/>Sincronización Continua"]
+    end
+
+    subgraph Cluster["OpenShift Cluster — Namespace: nfl-wallet"]
+        GW["Gateway API / Kuadrant Ingress"]
+
+        subgraph Mesh["OSSM3 Ambient Mesh — Zero-Trust"]
+            Z["ztunnel<br/>L4 Secure Overlay / mTLS"]
+            WP["Waypoint Proxy<br/>L7 Auth / Routing"]
+            UI["webapp<br/>Vue.js :5173"]
+            CAPI["api-customers<br/>.NET 8 :8080"]
+            BAPI["api-bills<br/>.NET 8 :8080"]
+            RAPI["api-raiders<br/>.NET 8 :8080"]
+        end
+    end
+
+    subgraph Externos["Servicios Externos"]
+        ESPN["API Pública de ESPN<br/>Scoreboards & Stats"]
+    end
+
+    User((Usuario Final)) --> GW
+    Dev((Desarrollador)) --> DevHub
+    Argo -- "Aplica Manifiestos" --> Cluster
+
+    GW --> Z
+    Z <--> UI
+    UI -- "Llamadas API" --> Z
+    Z <--> WP
+    WP --> CAPI
+    WP --> BAPI
+    WP --> RAPI
+
+    RAPI -- "Egress Traffic" --> ESPN
+    BAPI -- "Egress Traffic" --> ESPN
+```
 
 ## 2.3 Topología Multi-Cluster y Federación
 
@@ -152,34 +153,37 @@ El sistema utiliza un modelo **Hub-and-Spoke**, gobernado por las herramientas d
 - **Hub Cluster (Control Plane):** Red Hat Advanced Cluster Management (ACM), OpenShift GitOps (ArgoCD), Hub de Observabilidad centralizado (Prometheus, Grafana, Kiali).
 - **Data Clusters East/West (Spoke):** Cargas de trabajo de la aplicación, OSSM3 en Ambient Mode, federación mediante HBONE (HTTP/2-Based Encryption).
 
-<div class="diagram-box">
-                    Hub (OpenShift GitOps + ACM)
-    ┌─────────────────────────────────────────────────────────┐
-    │  app-nfl-wallet-acm.yaml                                 │
-    │  ┌─────────────┐  ┌──────────────────────────────────┐  │
-    │  │ Placement   │  │ GitOpsCluster                     │  │
-    │  │ nfl-wallet- │  │ (crea secrets east/west)          │  │
-    │  │ gitops-     │  │                                    │  │
-    │  │ placement   │  └──────────────────────────────────┘  │
-    │  └──────┬──────┘                                        │
-    │         │                                                │
-    │  app-nfl-wallet-acm-cluster-decision.yaml                │
-    │  ┌──────────────────────────────────────────────────┐   │
-    │  │ ApplicationSet (matrix)                           │   │
-    │  │ clusterDecisionResource × list (dev, test, prod)   │   │
-    │  └──────────────┬───────────────────────────────────┘   │
-    │                 │                                        │
-    │                 ▼                                        │
-    │  Applications: nfl-wallet-&lt;namespace&gt;-&lt;clusterName&gt;      │
-    └──────────────────────┬──────────────────────────────────┘
-                            │
-         ┌──────────────────┼──────────────────┐
-         ▼                                     ▼
-    Cluster East                          Cluster West
-    ├── nfl-wallet-dev                    ├── nfl-wallet-dev
-    ├── nfl-wallet-test                   ├── nfl-wallet-test
-    └── nfl-wallet-prod                   └── nfl-wallet-prod
-</div>
+```mermaid
+graph TD
+    subgraph Hub["Hub — OpenShift GitOps + ACM"]
+        ACM_YAML["app-nfl-wallet-acm.yaml"]
+        Placement["Placement<br/>nfl-wallet-gitops-placement"]
+        GitOps["GitOpsCluster<br/>crea secrets east/west"]
+        ACM_Decision["app-nfl-wallet-acm-cluster-decision.yaml"]
+        AppSet["ApplicationSet — matrix<br/>clusterDecisionResource × list: dev, test, prod"]
+        Apps["Applications:<br/>nfl-wallet-namespace-clusterName"]
+
+        ACM_YAML --> Placement
+        ACM_YAML --> GitOps
+        ACM_Decision --> AppSet
+        AppSet --> Apps
+    end
+
+    subgraph East["Cluster East"]
+        E_Dev["nfl-wallet-dev"]
+        E_Test["nfl-wallet-test"]
+        E_Prod["nfl-wallet-prod"]
+    end
+
+    subgraph West["Cluster West"]
+        W_Dev["nfl-wallet-dev"]
+        W_Test["nfl-wallet-test"]
+        W_Prod["nfl-wallet-prod"]
+    end
+
+    Apps --> East
+    Apps --> West
+```
 
 ## 2.4 Integración con API ESPN
 
@@ -792,27 +796,37 @@ Para lograr **alta disponibilidad geográfica** y failover automático entre los
 
 ### Arquitectura del Failover DNS
 
-<div class="diagram-box">
-                        Route 53 (DNS)
-                    ┌─────────────────────┐
-                    │  nfl-wallet.nfl.com  │
-                    │                     │
-                    │  Health Check East ──┤──▶ Cluster East
-                    │  Health Check West ──┤──▶ Cluster West
-                    │                     │
-                    │  Routing Policy:     │
-                    │  Failover / Weighted │
-                    └─────────┬───────────┘
-                              │
-              ┌───────────────┼───────────────┐
-              ▼                               ▼
-    Cluster East (Primary)          Cluster West (Secondary)
-    nfl-wallet-gateway-istio        nfl-wallet-gateway-istio
-    ├── webapp                      ├── webapp
-    ├── api-customers               ├── api-customers
-    ├── api-bills                   ├── api-bills
-    └── api-raiders                 └── api-raiders
-</div>
+```mermaid
+graph TD
+    DNS["Route 53 — DNS<br/>nfl-wallet.nfl.com<br/>Routing Policy: Failover / Weighted"]
+
+    DNS -- "Health Check East" --> East
+    DNS -- "Health Check West" --> West
+
+    subgraph East["Cluster East — Primary"]
+        E_GW["nfl-wallet-gateway-istio"]
+        E_Web["webapp"]
+        E_Cust["api-customers"]
+        E_Bills["api-bills"]
+        E_Raiders["api-raiders"]
+        E_GW --> E_Web
+        E_GW --> E_Cust
+        E_GW --> E_Bills
+        E_GW --> E_Raiders
+    end
+
+    subgraph West["Cluster West — Secondary"]
+        W_GW["nfl-wallet-gateway-istio"]
+        W_Web["webapp"]
+        W_Cust["api-customers"]
+        W_Bills["api-bills"]
+        W_Raiders["api-raiders"]
+        W_GW --> W_Web
+        W_GW --> W_Cust
+        W_GW --> W_Bills
+        W_GW --> W_Raiders
+    end
+```
 
 ### Definición de DNSPolicy con Kuadrant
 
@@ -1077,28 +1091,31 @@ response = requests.get(
 
 ### Relación Label → AuthPolicy → Secret
 
-<div class="diagram-box">
-  RHDH Portal                    Kubernetes Cluster
-  ┌──────────────┐               ┌──────────────────────────────────┐
-  │ Request API  │               │  Namespace: nfl-wallet-prod      │
-  │ Access       │───Approve───▶ │                                  │
-  │ Tier: silver │               │  Secret (label: api=nfl-wallet-  │
-  │              │               │  prod, tier=silver)              │
-  └──────────────┘               │       │                          │
-                                 │       ▼                          │
-  Consumer                       │  AuthPolicy                     │
-  ┌──────────────┐               │  (selector: api=nfl-wallet-prod)│
-  │ curl -H      │               │       │                          │
-  │ "X-Api-Key:  │───Request───▶ │       ▼                          │
-  │  <key>"      │               │  Authorino validates key         │
-  └──────────────┘               │  against labeled Secrets         │
-                                 │       │                          │
-                                 │       ▼                          │
-                                 │  ✓ 200 OK → Backend              │
-                                 │  ✗ 403 Forbidden                 │
-                                 │  ✗ 429 Too Many Requests         │
-                                 └──────────────────────────────────┘
-</div>
+```mermaid
+sequenceDiagram
+    participant Portal as RHDH Portal
+    participant K8s as Kubernetes Cluster<br/>nfl-wallet-prod
+    participant Auth as Authorino
+    participant Backend as Backend API
+
+    Portal->>K8s: Request API Access (Tier: silver)
+    K8s->>K8s: Approve → Create Secret<br/>label: api=nfl-wallet-prod, tier=silver
+
+    Note over Portal,K8s: Consumer obtiene API Key del portal
+
+    rect rgb(240, 248, 255)
+        Portal->>Auth: Request con X-Api-Key header
+        Auth->>K8s: Buscar Secrets con label<br/>api=nfl-wallet-prod
+        K8s-->>Auth: Secret encontrado
+        alt Key válida y dentro de cuota
+            Auth->>Backend: 200 OK → Forward request
+        else Key inválida
+            Auth-->>Portal: 403 Forbidden
+        else Cuota excedida
+            Auth-->>Portal: 429 Too Many Requests
+        end
+    end
+```
 
 > **Importante:** Los Secrets con API Keys deben existir en el mismo namespace que la AuthPolicy. Para producción, se recomienda usar **Sealed Secrets** o **External Secrets Operator** en lugar de commitear keys directamente en Git.
 

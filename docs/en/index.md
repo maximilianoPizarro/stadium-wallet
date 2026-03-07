@@ -16,7 +16,7 @@ lang: en
   </div>
   <h1>NFL Stadium <span>Wallet</span></h1>
   <p class="hero-sub">Official Installation, Testing &amp; Architecture Guide — Complete digital wallet ecosystem for NFL stadiums on Red Hat OpenShift.</p>
-  <p class="hero-meta"><strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Status:</strong> Production &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro</p>
+  <p class="hero-meta"><strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro</p>
 </section>
 
 <div class="toc" markdown="0">
