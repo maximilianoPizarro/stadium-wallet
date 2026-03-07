@@ -52,6 +52,9 @@ lang: es
 
 # 1. Resumen Ejecutivo {#resumen-ejecutivo}
 
+[![High Level Architecture](docs/images/high-level-architecture.png)](docs/images/high-level-architecture.png)
+<span class="img-caption">Arquitectura de alto nivel del ecosistema NFL Wallet.</span>
+
 Este documento proporciona la guía definitiva para el despliegue, configuración y validación del ecosistema **NFL Stadium Wallet**. La plataforma adopta un enfoque moderno basado en **GitOps**, seguridad **Zero-Trust** sin sidecars mediante **OSSM3 (Ambient Mode)**, y una gestión integral del ciclo de vida de las APIs a través de **Kuadrant** y **Red Hat Developer Hub**.
 
 El sistema se compone de un **frontend interactivo** (Vue.js) y **tres microservicios core** (.NET 8):
@@ -86,6 +89,18 @@ Los microservicios interactúan con fuentes de datos externas (**API de ESPN**) 
     <p>Topología Hub-and-Spoke con ACM, desplegado en clústeres East y West.</p>
   </div>
 </div>
+
+### Recursos Relacionados
+
+| Recurso | Descripción |
+|---------|-------------|
+| [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) | Artículo en Red Hat Developer: arquitectura Zero Trust con OIDC/Keycloak y NeuralBank |
+| [Red Hat Connectivity Link — Documentación v1.2](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.2) | Documentación oficial del producto |
+| [Red Hat Connectivity Link — Producto](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) | Página de producto con overview y casos de uso |
+| [Kuadrant — Documentación](https://docs.kuadrant.io/) | Documentación del proyecto upstream (AuthPolicy, RateLimitPolicy, DNSPolicy) |
+| [Kuadrant — Proyecto](https://kuadrant.io/) | Sitio del proyecto open source |
+| [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift) | Guía de inicio rápido en Red Hat Developer |
+| [OSSM3 Ambient Mode — Multi-Cluster Demo](https://github.com/panchoraposo/ossm3-ambient-mode) | Repo de Francisco Raposo: Ansible playbooks para OSSM3, Bookinfo y observabilidad multi-cluster |
 
 ---
 
@@ -346,6 +361,10 @@ spec:
 
 # 6. Service Mesh 3 (Ambient Mode) {#service-mesh}
 
+OpenShift Service Mesh 3 (OSSM3) implementa un modelo de seguridad **Zero Trust** en la capa de red: cada conexión entre servicios se autentica y encripta automáticamente mediante mTLS, independientemente de su origen. El principio es *"nunca confiar, siempre verificar"* — ningún servicio puede comunicarse con otro sin presentar una identidad criptográfica válida emitida por la CA del mesh. Esto elimina la confianza implícita basada en la topología de red y proporciona defensa en profundidad contra movimiento lateral.
+
+> **Lectura relacionada:** El artículo [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) profundiza en la integración de Service Mesh con Connectivity Link y Kuadrant para construir una arquitectura Zero Trust completa.
+
 ## 6.1 Modelo de Seguridad Zero-Sidecar
 
 OSSM 3.2 en Ambient Mode separa las funciones de seguridad L4 y L7 en componentes especializados:
@@ -356,6 +375,22 @@ OSSM 3.2 en Ambient Mode separa las funciones de seguridad L4 y L7 en componente
 | **Waypoint Proxy** | L7 | Proxy Envoy dedicado por servicio: telemetría avanzada L7, routing HTTP complejo, control de acceso |
 
 Los Waypoints se despliegan estratégicamente para `api-customers`, `api-bills` y `api-raiders` sin inyectar sidecars en los pods.
+
+### Sidecar tradicional vs. Ambient Mode
+
+En el modelo **sidecar tradicional**, cada pod recibe un contenedor `istio-proxy` inyectado automáticamente. Esto implica duplicar el consumo de memoria y CPU por cada workload, incrementar la latencia de startup, y complicar el debugging (cada pod tiene 2+ contenedores).
+
+**Ambient Mode** elimina esta complejidad separando las responsabilidades:
+
+| Aspecto | Sidecar | Ambient |
+|---------|---------|---------|
+| mTLS | Proxy por pod | ztunnel por nodo (DaemonSet) |
+| Contenedores por pod | 2+ (app + sidecar) | 1 (solo app) |
+| Overhead de memoria | ~50-100 MB por sidecar | Compartido por nodo |
+| Políticas L7 | Sidecar Envoy | Waypoint Proxy (opcional, por servicio) |
+| Complejidad operativa | Alta (inyección, disruptions en rollouts) | Baja (sin inyección, sin disruptions) |
+
+El resultado es la **misma seguridad mTLS** con menor overhead de recursos y menor complejidad operativa.
 
 ## 6.2 Enrolamiento en Ambient Mode
 
@@ -372,7 +407,33 @@ metadata:
 
 **Validación:** Los pods de la aplicación NO tienen el contenedor `istio-proxy`, pero el tráfico se encripta mediante mTLS gestionado por el DaemonSet ztunnel.
 
+Verificar que ztunnel está interceptando el tráfico del namespace:
+
+```bash
+# Confirmar que los pods NO tienen sidecar (1/1 containers)
+oc get pods -n nfl-wallet -o custom-columns=NAME:.metadata.name,CONTAINERS:.spec.containers[*].name,READY:.status.containerStatuses[*].ready
+
+# Verificar que ztunnel está activo y procesando tráfico
+oc logs -n ztunnel -l app=ztunnel --tail=20 | grep "nfl-wallet"
+
+# Confirmar identidad SPIFFE asignada a los workloads
+oc exec -n ztunnel $(oc get pod -n ztunnel -l app=ztunnel -o name | head -1) -- curl -s localhost:15000/config_dump | grep "nfl-wallet"
+```
+
 ## 6.3 Waypoint Proxy
+
+El Waypoint Proxy se despliega solo cuando se requieren políticas L7 (HTTP routing, AuthPolicy, telemetría avanzada). Si un servicio solo necesita mTLS (L4), **ztunnel es suficiente** y no se requiere Waypoint — esto reduce el consumo de recursos.
+
+**Cuándo usar cada componente:**
+
+| Necesidad | Componente | Ejemplo en NFL Wallet |
+|-----------|------------|----------------------|
+| mTLS + telemetría básica | ztunnel (L4) | Comunicación webapp ↔ apis |
+| AuthPolicy / RateLimitPolicy | Waypoint (L7) | Validación de API Key en api-customers |
+| Routing HTTP avanzado | Waypoint (L7) | URL rewrite en HTTPRoutes |
+| Trazas distribuidas (spans L7) | Waypoint (L7) | Spans en Jaeger/Tempo |
+
+El Waypoint se integra nativamente con las políticas de [Kuadrant](https://docs.kuadrant.io/): cuando una AuthPolicy o RateLimitPolicy referencia un HTTPRoute, el Waypoint es el componente que ejecuta la validación L7 en coordinación con Authorino y Limitador.
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -392,15 +453,41 @@ spec:
 
 ## 6.4 Federación y Trust
 
-- **Shared Root CA:** Una CA raíz compartida entre todos los Data Clusters (East/West)
-- **meshNetworks:** Configuración de reachabilidad cross-cluster
-- **East-West HBONE Gateways:** Transporte L4 seguro mediante HBONE para descubrimiento y comunicación entre regiones
+La federación multi-cluster establece un dominio de confianza unificado entre los clústeres East y West. El proceso se basa en tres pilares:
+
+- **Shared Root CA:** Una CA raíz compartida entre todos los Data Clusters (East/West). Cada clúster genera certificados intermedios desde esta CA, permitiendo que las identidades SPIFFE (`spiffe://cluster.local/ns/nfl-wallet/sa/api-customers`) sean reconocidas por ambos clústeres
+- **meshNetworks:** Configuración de reachabilidad cross-cluster que define qué redes son alcanzables y a través de qué gateways
+- **East-West HBONE Gateways:** Transporte L4 seguro mediante HBONE para descubrimiento y comunicación entre regiones. El protocolo HBONE encapsula tráfico mTLS sobre HTTP/2 CONNECT, atravesando firewalls y load balancers sin requerir puertos adicionales
+
+> **Referencia:** El repo [ossm3-ambient-mode](https://github.com/panchoraposo/ossm3-ambient-mode) contiene los scripts de Ansible para automatizar la generación de la CA compartida, el intercambio de remote secrets y la configuración de meshNetworks entre clústeres.
 
 ---
 
 # 7. Connectivity Link y Gateway API {#connectivity-link}
 
+[Red Hat Connectivity Link](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) es un framework Kubernetes-native que unifica **Gateway API**, **gestión de políticas** (autenticación, rate limiting) y **DNS** en una experiencia declarativa. Basado en el proyecto upstream [Kuadrant](https://kuadrant.io/), Connectivity Link permite definir políticas de conectividad como CRDs que se aplican automáticamente al Gateway, eliminando la necesidad de configurar proxies, rate limiters y auth servers de forma manual.
+
+En el contexto de NFL Wallet, Connectivity Link orquesta:
+- **Ingress** via Kubernetes Gateway API (reemplazando OpenShift Routes tradicionales)
+- **Rate Limiting** via RateLimitPolicy + [Limitador](https://docs.kuadrant.io/) (motor de cuotas escrito en Rust)
+- **Autenticación** via AuthPolicy + [Authorino](https://docs.kuadrant.io/latest/authorino/docs/getting-started/) (validación de API Keys)
+- **DNS** via DNSPolicy para failover multi-cluster con Route 53
+
+> **Documentación oficial:**
+> - [Red Hat Connectivity Link v1.2](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.2)
+> - [Kuadrant — Documentación](https://docs.kuadrant.io/)
+> - [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift)
+
 ## 7.1 Ingress con HTTPRoute
+
+La [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) es el estándar que reemplaza al recurso Ingress tradicional. Su principal ventaja es la **separación de responsabilidades**: el equipo de infraestructura define el recurso `Gateway` (listeners, protocolos, certificados), mientras que los equipos de desarrollo definen sus propios `HTTPRoute` (paths, backends, rewrites). Esta separación se formaliza mediante los CRDs:
+
+| CRD | Responsable | Función |
+|-----|-------------|---------|
+| `GatewayClass` | Proveedor (Istio/Envoy) | Define el controlador que implementa el Gateway |
+| `Gateway` | Platform Engineer | Listeners (puertos, protocolos, TLS), políticas globales |
+| `HTTPRoute` | Developer | Routing por path/header, backends, URL rewrite |
+| `ReferenceGrant` | Platform Engineer | Autoriza referencias cross-namespace |
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -424,6 +511,27 @@ Se crean cuatro HTTPRoutes: webapp (`/`), api-customers (`/api-customers`), api-
 
 ## 7.2 Habilitar Gateway
 
+El Gateway define los listeners que aceptan tráfico externo. En NFL Wallet, el Helm chart crea un Gateway con listener HTTP que es gestionado por el controlador Istio/Envoy de Connectivity Link:
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nfl-wallet-gateway
+  namespace: nfl-wallet
+spec:
+  gatewayClassName: openshift-gateway
+  listeners:
+  - name: http
+    port: 8080
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Same
+```
+
+Despliegue via Helm:
+
 ```bash
 helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
   --set gateway.enabled=true \
@@ -431,6 +539,13 @@ helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
 ```
 
 ## 7.3 Rate Limiting con Kuadrant
+
+Kuadrant implementa rate limiting mediante dos componentes: la **RateLimitPolicy** (CRD declarativo que define las reglas) y **Limitador** (servicio que mantiene los contadores en memoria y evalúa las cuotas). El flujo de enforcement es:
+
+1. Un request llega al **Gateway** (Envoy)
+2. Envoy consulta a **Limitador** con los descriptores definidos en la RateLimitPolicy
+3. Limitador evalúa los contadores (ventana de tiempo + límite) y responde allow/deny
+4. Si el límite se excede, el Gateway retorna **429 Too Many Requests** antes de que el request llegue al backend
 
 ```yaml
 apiVersion: kuadrant.io/v1beta2
@@ -450,6 +565,16 @@ spec:
         unit: minute
 ```
 
+### Tiers de Rate Limiting
+
+NFL Wallet define tres tiers de acceso que se aplican mediante PlanPolicy en combinación con el plugin de Kuadrant en RHDH:
+
+| Tier | Límite | Caso de Uso |
+|------|--------|-------------|
+| **Bronze** | 100 req/día | Evaluación y desarrollo |
+| **Silver** | 500 req/día | Aplicaciones en testing |
+| **Gold** | 1000 req/día | Producción |
+
 Habilitar Rate Limiting + Auth:
 
 ```bash
@@ -467,6 +592,17 @@ helm upgrade nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
 ---
 
 # 8. Seguridad: API Keys y Políticas {#seguridad}
+
+La seguridad en NFL Wallet se implementa en múltiples capas, siguiendo el principio de defensa en profundidad. El flujo end-to-end de un request autenticado es:
+
+1. El request llega al **Gateway** (Envoy gestionado por Connectivity Link)
+2. **Authorino** intercepta el request y busca credenciales: extrae el header `X-Api-Key` y lo compara contra los Secrets de Kubernetes que tienen el label `api: nfl-wallet-prod`
+3. Si la credencial es válida, **OPA** evalúa las reglas Rego definidas en la AuthPolicy
+4. **Limitador** verifica que el consumidor no haya excedido su cuota (según su Tier: bronze/silver/gold)
+5. Si todas las validaciones pasan, el request se forwarded al backend con mTLS (ztunnel/Waypoint)
+6. Si falla autenticación → **403 Forbidden**; si falla cuota → **429 Too Many Requests**
+
+> **Modelos de autenticación soportados por Connectivity Link:** NFL Wallet utiliza **API Keys** como mecanismo de autenticación. Connectivity Link también soporta **OIDC/OAuth2** con proveedores como Red Hat build of Keycloak, como se demuestra en el artículo [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) con la aplicación NeuralBank. Ambos modelos son complementarios y pueden coexistir en el mismo clúster.
 
 ## 8.1 Dos Modelos de Seguridad
 
@@ -494,6 +630,10 @@ spec:
 ```
 
 ## 8.3 AuthPolicy de Kuadrant (Gateway)
+
+La [AuthPolicy](https://docs.kuadrant.io/) es el CRD de Kuadrant que define reglas de autenticación y autorización a nivel de Gateway o HTTPRoute. Internamente, Kuadrant delega la ejecución a **Authorino**, que actúa como servidor de autorización externo (ext-authz) integrado con Envoy.
+
+**Cómo Authorino descubre credenciales:** Authorino busca Secrets de Kubernetes que contengan labels específicos (por ejemplo `api: nfl-wallet-prod`). Cuando un request incluye el header `X-Api-Key`, Authorino compara el valor contra todos los Secrets que matchean el label selector. Este mecanismo permite aprovisionar y revocar API Keys de forma dinámica sin reiniciar ningún componente — basta con crear o eliminar un Secret con el label correspondiente.
 
 ```yaml
 apiVersion: kuadrant.io/v1
@@ -524,11 +664,17 @@ spec:
 
 ## 8.4 Seguridad por Ambiente
 
-| Ambiente | API Key | AuthPolicy |
-|----------|---------|------------|
-| **Dev** | No requerida | Sin autenticación — `istio-injection: enabled` (sidecar mode) |
-| **Test** | `nfl-wallet-customers-key` | AuthPolicy + API keys + `istio.io/dataplane-mode: ambient` |
-| **Prod** | `nfl-wallet-customers-key` | AuthPolicy + API keys + canary route + ambient mode |
+NFL Wallet implementa una **estrategia de seguridad progresiva** donde cada ambiente incrementa el nivel de protección. Esto permite iteración rápida en desarrollo, validación de integración en test, y Zero Trust completo en producción:
+
+| Ambiente | API Key | AuthPolicy | Modelo de Mesh |
+|----------|---------|------------|----------------|
+| **Dev** | No requerida | Sin autenticación | Sidecar mode (`istio-injection: enabled`) |
+| **Test** | `nfl-wallet-customers-key` | AuthPolicy + API keys | Ambient mode (`istio.io/dataplane-mode: ambient`) |
+| **Prod** | `nfl-wallet-customers-key` | AuthPolicy + API keys + canary route | Ambient mode + Waypoint proxies |
+
+- **Dev sin auth** permite a los desarrolladores iterar rápidamente sin gestionar credenciales, enfocándose en la lógica de negocio
+- **Test con auth** valida que la integración con Authorino y las API Keys funciona correctamente antes de llegar a producción
+- **Prod con auth + canary + ambient** garantiza Zero Trust completo: mTLS en todo el tráfico inter-servicio, validación de credenciales en el Gateway, rate limiting por Tier, y capacidad de despliegue canary para rollouts seguros
 
 ## 8.5 Restricción de Acceso entre Namespaces (Test / Prod) {#namespace-isolation}
 
@@ -1007,7 +1153,21 @@ kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 
 # 10. Red Hat Developer Hub {#developer-hub}
 
-La gobernanza de las APIs se centraliza mediante **Kuadrant** en el backend y **RHDH** en el frontend, brindando una experiencia de autoservicio para los desarrolladores.
+[Red Hat Developer Hub](https://developers.redhat.com/rhdh) (RHDH), basado en el proyecto upstream [Backstage](https://backstage.io/), proporciona una experiencia de **autoservicio para desarrolladores** donde pueden descubrir APIs, solicitar acceso y obtener credenciales sin necesidad de tickets, intervención manual de operaciones, ni conocimiento de la infraestructura subyacente. Este enfoque *inner-loop* reduce la fricción entre equipos de desarrollo y plataforma.
+
+La gobernanza de las APIs se centraliza mediante **Kuadrant** en el backend y **RHDH** en el frontend. El [Plugin de Kuadrant para RHDH](https://docs.kuadrant.io/) conecta ambos mundos: las APIs se registran automáticamente en el catálogo de Backstage mediante annotations en los manifiestos GitOps, y las políticas de acceso (Tiers, AuthPolicy, RateLimitPolicy) se descubren y gestionan desde el portal.
+
+### Mapeo de Tiers a CRDs
+
+Los Tiers de acceso definidos en RHDH se materializan como CRDs de Kuadrant en el clúster:
+
+| Tier en RHDH | CRD Kuadrant | Límite | Secret Label |
+|--------------|-------------|--------|-------------|
+| Bronze | `PlanPolicy` + `RateLimitPolicy` | 100 req/día | `tier: bronze` |
+| Silver | `PlanPolicy` + `RateLimitPolicy` | 500 req/día | `tier: silver` |
+| Gold | `PlanPolicy` + `RateLimitPolicy` | 1000 req/día | `tier: gold` |
+
+Cuando un administrador define un Tier via `PlanPolicy`, Kuadrant crea automáticamente la `RateLimitPolicy` correspondiente. Cuando un desarrollador solicita acceso desde RHDH, Kuadrant provisiona el `Secret` con el API Key y los labels que Authorino utiliza para validación.
 
 ## 10.1 Flujo de Autoservicio
 
