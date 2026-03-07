@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: 'es' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if page.title %}{{ page.title }} | {% endif %}{{ site.title }}</title>
+  <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
+  <link rel="stylesheet" href="{{ '/css/redhat-docs.css' | relative_url }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700;900&family=Red+Hat+Text:wght@400;500;600&family=Red+Hat+Mono:wght@400;500&display=swap" rel="stylesheet">
+  {% seo %}
+</head>
+<body>
+  <div class="rh-band"></div>
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="{{ '/' | relative_url }}" class="site-brand">
+        <svg class="rh-logo" viewBox="0 0 613 145" xmlns="http://www.w3.org/2000/svg" aria-label="Red Hat">
+          <path d="M127.47 83.49c12.51 0 30.61-2.58 30.61-17.46a14 14 0 00-.31-3.42l-7.45-32.36c-1.72-7.12-3.23-10.35-15.73-16.6C124.89 8.69 103.76.5 97.51.5 91.69.5 90 8 83.06 8c-6.68 0-11.64-5.6-17.89-5.6-6 0-9.91 4.09-12.93 12.5 0 0-8.41 23.72-9.49 27.16A6.43 6.43 0 0042.53 44c0 9.22 36.3 39.45 84.94 39.45M127.47 83.49zM55.73 83.49a155.71 155.71 0 0016.4-1.06c2.43-.32 3.91-.79 3.91-2a1.63 1.63 0 00-.11-.55l-9.31-40.09c-1.1-5.17-4.68-11-14.87-11-14.21 0-25.77 10-25.77 23.31 0 16.74 14.68 31.39 29.75 31.39" fill="#cc0000"/>
+          <path d="M127.47 83.49c-48.64 0-84.94-30.23-84.94-39.45a6.43 6.43 0 01.22-1.94c-1 3.07-1.58 5.38-1.58 7.26 0 18.66 39.14 50.63 86.3 50.63 14.48 0 33.28-3.5 33.28-20 0-5.55-2.15-9.44-4.23-13.94a34 34 0 01-.31 3.42c0 14.88-18.1 14.02-28.74 14.02" fill="#2d2d2d"/>
+        </svg>
+        <span class="site-title">{{ site.title }}</span>
+      </a>
+      <div class="header-right">
+        <nav class="site-nav" id="mainNav">
+          {% if page.lang == 'en' %}
+          <a href="{{ '/en/' | relative_url }}" class="{% if page.url == '/en/' or page.url == '/en/index.html' %}active{% endif %}">Home</a>
+          <a href="{{ '/en/' | relative_url }}#architecture" class="nav-scroll">Architecture</a>
+          <a href="{{ '/en/' | relative_url }}#deployment" class="nav-scroll">Deployment</a>
+          <a href="{{ '/en/' | relative_url }}#service-mesh" class="nav-scroll">Service Mesh</a>
+          <a href="{{ '/en/' | relative_url }}#gitops" class="nav-scroll">GitOps</a>
+          <a href="{{ '/en/' | relative_url }}#observability" class="nav-scroll">Observability</a>
+          <a href="{{ '/en/' | relative_url }}#testing" class="nav-scroll">Testing</a>
+          {% else %}
+          <a href="{{ '/' | relative_url }}" class="{% if page.url == '/' or page.url == '/index.html' %}active{% endif %}">Inicio</a>
+          <a href="{{ '/' | relative_url }}#arquitectura" class="nav-scroll">Arquitectura</a>
+          <a href="{{ '/' | relative_url }}#despliegue" class="nav-scroll">Despliegue</a>
+          <a href="{{ '/' | relative_url }}#service-mesh" class="nav-scroll">Service Mesh</a>
+          <a href="{{ '/' | relative_url }}#gitops" class="nav-scroll">GitOps</a>
+          <a href="{{ '/' | relative_url }}#observabilidad" class="nav-scroll">Observabilidad</a>
+          <a href="{{ '/' | relative_url }}#pruebas" class="nav-scroll">Pruebas</a>
+          {% endif %}
+        </nav>
+        <div class="lang-switch">
+          {% if page.lang == 'en' %}
+          <a href="{{ '/' | relative_url }}" title="Español">ES</a>
+          <span class="lang-active">EN</span>
+          {% else %}
+          <span class="lang-active">ES</span>
+          <a href="{{ '/en/' | relative_url }}" title="English">EN</a>
+          {% endif %}
+        </div>
+        <a href="{{ site.github_repo }}" target="_blank" rel="noopener" class="gh-link" aria-label="GitHub">
+          <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="page-content">
+      {{ content }}
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <svg class="rh-logo-footer" viewBox="0 0 613 145" xmlns="http://www.w3.org/2000/svg" aria-label="Red Hat">
+          <path d="M127.47 83.49c12.51 0 30.61-2.58 30.61-17.46a14 14 0 00-.31-3.42l-7.45-32.36c-1.72-7.12-3.23-10.35-15.73-16.6C124.89 8.69 103.76.5 97.51.5 91.69.5 90 8 83.06 8c-6.68 0-11.64-5.6-17.89-5.6-6 0-9.91 4.09-12.93 12.5 0 0-8.41 23.72-9.49 27.16A6.43 6.43 0 0042.53 44c0 9.22 36.3 39.45 84.94 39.45M127.47 83.49zM55.73 83.49a155.71 155.71 0 0016.4-1.06c2.43-.32 3.91-.79 3.91-2a1.63 1.63 0 00-.11-.55l-9.31-40.09c-1.1-5.17-4.68-11-14.87-11-14.21 0-25.77 10-25.77 23.31 0 16.74 14.68 31.39 29.75 31.39" fill="#cc0000"/>
+          <path d="M127.47 83.49c-48.64 0-84.94-30.23-84.94-39.45a6.43 6.43 0 01.22-1.94c-1 3.07-1.58 5.38-1.58 7.26 0 18.66 39.14 50.63 86.3 50.63 14.48 0 33.28-3.5 33.28-20 0-5.55-2.15-9.44-4.23-13.94a34 34 0 01-.31 3.42c0 14.88-18.1 14.02-28.74 14.02" fill="#fff"/>
+        </svg>
+        <p>NFL Stadium Wallet v{{ site.version }} &mdash; {{ site.author }}</p>
+      </div>
+      <div class="footer-links">
+        <a href="{{ site.github_repo }}" target="_blank" rel="noopener">NFL-Wallet Repo</a>
+        <a href="{{ site.github_gitops_repo }}" target="_blank" rel="noopener">GitOps Repo</a>
+        <a href="https://artifacthub.io/packages/search?repo=nfl-wallet" target="_blank" rel="noopener">Artifact Hub</a>
+        <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+      <p class="footer-legal">&copy; 2026 Maximiliano Pizarro. Built with Jekyll &amp; Red Hat Design Language.</p>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('navToggle').addEventListener('click', function() {
+      document.getElementById('mainNav').classList.toggle('open');
+    });
+    document.querySelectorAll('.doc-img-link').forEach(function(a) {
+      a.setAttribute('target', '_blank');
+      a.setAttribute('rel', 'noopener');
+    });
+  </script>
+</body>
+</html>
