@@ -50,7 +50,7 @@ lang: es
 
 ---
 
-# 1. Resumen Ejecutivo {#resumen-ejecutivo}
+# 1. Resumen Ejecutivo
 
 [![High Level Architecture](docs/images/high-level-architecture.png)](docs/images/high-level-architecture.png)
 <span class="img-caption">Arquitectura de alto nivel del ecosistema NFL Wallet.</span>
@@ -104,7 +104,7 @@ Los microservicios interactúan con fuentes de datos externas (**API de ESPN**) 
 
 ---
 
-# 2. Arquitectura y Flujos de Datos {#arquitectura}
+# 2. Arquitectura y Flujos de Datos
 
 ## 2.1 Arquitectura de Tres Capas
 
@@ -208,7 +208,7 @@ Los microservicios `api-bills` y `api-raiders` requieren datos deportivos en tie
 
 ---
 
-# 3. Stack Tecnológico {#stack-tecnológico}
+# 3. Stack Tecnológico
 
 <div class="tech-badges">
   <img src="https://img.shields.io/badge/OpenShift-EE0000?style=for-the-badge&logo=redhatopenshift&logoColor=white" alt="OpenShift">
@@ -237,7 +237,7 @@ Los microservicios `api-bills` y `api-raiders` requieren datos deportivos en tie
 
 ---
 
-# 4. Prerrequisitos de Infraestructura {#prerrequisitos}
+# 4. Prerrequisitos de Infraestructura
 
 ## 4.1 Requisitos del Clúster
 
@@ -269,7 +269,18 @@ Los siguientes operadores deben estar instalados y configurados por el administr
 
 ---
 
-# 5. Guía de Instalación GitOps {#despliegue}
+# 5. Guía de Instalación GitOps
+
+### Por qué GitOps
+
+NFL Wallet adopta GitOps como modelo de despliegue porque resuelve problemas fundamentales de la operación de plataformas:
+
+- **Reproducibilidad:** El estado completo del clúster está declarado en Git. Cualquier ambiente (dev, test, prod) se puede recrear desde cero aplicando los mismos manifiestos
+- **Auditabilidad:** Cada cambio en la infraestructura tiene un commit con autor, fecha y mensaje. No hay "cambios a mano" que se pierden — Git es la fuente de verdad
+- **Drift detection:** ArgoCD compara continuamente el estado deseado (Git) contra el estado real (clúster) y alerta o autocorrige desviaciones
+- **Rollback declarativo:** Revertir un despliegue problemático es un `git revert` — ArgoCD reconcilia automáticamente al estado anterior
+
+> *"Rather than manually configuring each component, you define the desired state in code, and GitOps ensures that state is achieved and maintained."* — [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link)
 
 La instalación se realiza de forma **declarativa** mediante OpenShift GitOps (ArgoCD), no mediante comandos imperativos.
 
@@ -359,7 +370,7 @@ spec:
 
 ---
 
-# 6. Service Mesh 3 (Ambient Mode) {#service-mesh}
+# 6. Service Mesh 3 (Ambient Mode)
 
 OpenShift Service Mesh 3 (OSSM3) implementa un modelo de seguridad **Zero Trust** en la capa de red: cada conexión entre servicios se autentica y encripta automáticamente mediante mTLS, independientemente de su origen. El principio es *"nunca confiar, siempre verificar"* — ningún servicio puede comunicarse con otro sin presentar una identidad criptográfica válida emitida por la CA del mesh. Esto elimina la confianza implícita basada en la topología de red y proporciona defensa en profundidad contra movimiento lateral.
 
@@ -391,6 +402,22 @@ En el modelo **sidecar tradicional**, cada pod recibe un contenedor `istio-proxy
 | Complejidad operativa | Alta (inyección, disruptions en rollouts) | Baja (sin inyección, sin disruptions) |
 
 El resultado es la **misma seguridad mTLS** con menor overhead de recursos y menor complejidad operativa.
+
+### Impacto real en recursos
+
+Los datos publicados por la comunidad Istio muestran el ahorro concreto que Ambient Mode aporta a escala:
+
+> *"Ambient mode's shared ztunnel uses about 1 GB of memory for 300 pods on 10 nodes. By contrast, sidecar mode deploys a proxy per pod, consuming approximately 21 GB of memory for the same 300 pods."*
+
+Esto representa una **reducción de ~95 % en consumo de memoria** dedicada al mesh. Además, como ztunnel opera como DaemonSet (un proceso por nodo), el overhead no crece con el número de pods sino con el de nodos, haciendo Ambient Mode particularmente eficiente para plataformas con alta densidad de microservicios.
+
+| Métrica | Sidecar (300 pods / 10 nodos) | Ambient (300 pods / 10 nodos) |
+|---------|-------------------------------|-------------------------------|
+| Memoria del mesh | ~21 GB | ~1 GB |
+| Proxies desplegados | 300 (uno por pod) | 10 ztunnels + waypoints selectivos |
+| Startup latency adicional | Sí (inyección de sidecar) | No |
+
+> **Fuente:** [Istio — Ambient Mode Overview](https://istio.io/latest/docs/overview/dataplane-modes/) · *"Start with L4 security and selectively add L7 features only to services that need them."*
 
 ## 6.2 Enrolamiento en Ambient Mode
 
@@ -463,7 +490,7 @@ La federación multi-cluster establece un dominio de confianza unificado entre l
 
 ---
 
-# 7. Connectivity Link y Gateway API {#connectivity-link}
+# 7. Connectivity Link y Gateway API
 
 [Red Hat Connectivity Link](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) es un framework Kubernetes-native que unifica **Gateway API**, **gestión de políticas** (autenticación, rate limiting) y **DNS** en una experiencia declarativa. Basado en el proyecto upstream [Kuadrant](https://kuadrant.io/), Connectivity Link permite definir políticas de conectividad como CRDs que se aplican automáticamente al Gateway, eliminando la necesidad de configurar proxies, rate limiters y auth servers de forma manual.
 
@@ -477,6 +504,20 @@ En el contexto de NFL Wallet, Connectivity Link orquesta:
 > - [Red Hat Connectivity Link v1.2](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.2)
 > - [Kuadrant — Documentación](https://docs.kuadrant.io/)
 > - [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift)
+
+### Por qué Gateway API y no Ingress tradicional
+
+La migración de Ingress a Gateway API no es una decisión estética — es una necesidad operativa con un horizonte concreto:
+
+- **Ingress NGINX alcanza fin de soporte en marzo 2026.** Los proyectos que dependan de este controlador deberán migrar a alternativas activamente mantenidas. Gateway API es la recomendación oficial del proyecto Kubernetes.
+- **Gateway API alcanzó GA en octubre 2023** (v1.0) y ya es soportada por todos los controladores principales: Istio, Envoy Gateway, HAProxy, Traefik, NGINX Gateway Fabric y Cilium.
+- **Las annotations vendor-specific de Ingress** (como `nginx.ingress.kubernetes.io/*`) generan lock-in al controlador. Gateway API usa CRDs tipados con validación en esquema — no hay magic annotations.
+
+> *"Kuadrant extends Gateway API to add a connectivity management API that makes it easy for platform engineers and application developers to collaborate on connectivity concerns."* — [kuadrant.io](https://kuadrant.io/)
+
+La ventaja fundamental de Gateway API es la **separación de responsabilidades** mediante CRDs formales: el equipo de plataforma controla el `Gateway`, los equipos de desarrollo controlan sus `HTTPRoute`, y las políticas de seguridad se aplican como attachments independientes. Esto elimina la necesidad de coordinar annotations en un único recurso Ingress compartido.
+
+> **Fuentes:** [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) · [Introducing ingress2gateway](https://kubernetes.io/blog/2023/10/25/introducing-ingress2gateway/) · [Red Hat Connectivity Link — Now GA](https://developers.redhat.com/articles/2025/01/23/red-hat-connectivity-link-now-generally-available)
 
 ## 7.1 Ingress con HTTPRoute
 
@@ -591,7 +632,7 @@ helm upgrade nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
 
 ---
 
-# 8. Seguridad: API Keys y Políticas {#seguridad}
+# 8. Seguridad: API Keys y Políticas
 
 La seguridad en NFL Wallet se implementa en múltiples capas, siguiendo el principio de defensa en profundidad. El flujo end-to-end de un request autenticado es:
 
@@ -676,7 +717,7 @@ NFL Wallet implementa una **estrategia de seguridad progresiva** donde cada ambi
 - **Test con auth** valida que la integración con Authorino y las API Keys funciona correctamente antes de llegar a producción
 - **Prod con auth + canary + ambient** garantiza Zero Trust completo: mTLS en todo el tráfico inter-servicio, validación de credenciales en el Gateway, rate limiting por Tier, y capacidad de despliegue canary para rollouts seguros
 
-## 8.5 Restricción de Acceso entre Namespaces (Test / Prod) {#namespace-isolation}
+## 8.5 Restricción de Acceso entre Namespaces (Test / Prod)
 
 En un entorno multi-ambiente sobre el mismo clúster, es crítico que los servicios de **test** no puedan acceder a los de **prod** y viceversa. OSSM3 en Ambient Mode proporciona este aislamiento a través de **AuthorizationPolicy** de Istio a nivel de namespace.
 
@@ -756,7 +797,7 @@ ArgoCD sincroniza estas políticas automáticamente al desplegar cada ambiente.
 
 > **Dev sin restricción:** El ambiente dev (`nfl-wallet-dev`) intencionalmente no aplica esta restricción para facilitar el desarrollo y debugging cross-service.
 
-## 8.5.1 Políticas entre Namespaces con Gateway API e Istio {#gateway-namespace-policies}
+## 8.5.1 Políticas entre Namespaces con Gateway API e Istio
 
 Además de las AuthorizationPolicy a nivel de workload, la **Gateway API** e **Istio** ofrecen mecanismos adicionales para controlar el tráfico entre namespaces. Estas opciones operan a diferentes niveles (L4/L7) y ofrecen granularidad distinta.
 
@@ -928,7 +969,7 @@ spec:
 
 > **Recomendación:** Para NFL Wallet, se combinan **AuthorizationPolicy** (aislamiento de workloads), **PeerAuthentication STRICT** (mTLS obligatorio), y **allowedRoutes** en el Gateway (scoping de rutas por namespace). Esta combinación provee defensa en profundidad.
 
-## 8.6 Failover Multi-Cluster con DNSPolicy y Route 53 {#dns-failover}
+## 8.6 Failover Multi-Cluster con DNSPolicy y Route 53
 
 Para lograr **alta disponibilidad geográfica** y failover automático entre los clústeres East y West, Kuadrant integra **DNSPolicy** con **Amazon Route 53** (u otros proveedores DNS compatibles). Esto permite que, si un clúster falla, el tráfico se redirija automáticamente al clúster sano.
 
@@ -1077,7 +1118,22 @@ spec:
 
 ---
 
-# 9. GitOps Multi-Cluster con ACM {#gitops}
+# 9. GitOps Multi-Cluster con ACM
+
+### Por qué Red Hat Advanced Cluster Management
+
+En un entorno de producción real, una sola instancia de OpenShift no es suficiente. Los requisitos de **alta disponibilidad**, **localidad de datos** y **cumplimiento regulatorio** exigen distribuir workloads en múltiples clústeres. Sin embargo, gestionar N clústeres de forma independiente multiplica la complejidad operativa: N conjuntos de políticas, N configuraciones de red, N despliegues manuales.
+
+**Red Hat Advanced Cluster Management (ACM)** resuelve esto con un modelo **Hub-and-Spoke**:
+
+- **Hub centralizado:** Un clúster de gestión que define políticas, placements y configuraciones para todos los managed clusters
+- **Managed clusters (East/West):** Clústeres de workload que reciben sus configuraciones desde el hub, eliminando drift y configuración manual
+- **Placement API:** Permite seleccionar dinámicamente en qué clústeres se despliega cada workload según labels, capacidad o reglas de afinidad
+- **GitOpsCluster:** Conecta ACM con ArgoCD — ACM registra automáticamente los managed clusters como destinos de ArgoCD, generando los Secrets necesarios sin intervención manual
+
+En NFL Wallet, ACM genera automáticamente **6 Applications** de ArgoCD (dev/test/prod × east/west) a partir de un único `ApplicationSet` con `clusterDecisionResource`, garantizando que cualquier cambio en Git se propague de forma idéntica a todos los clústeres.
+
+> **Fuente:** [Red Hat Advanced Cluster Management for Kubernetes](https://www.redhat.com/en/technologies/management/advanced-cluster-management)
 
 ## 9.1 Modos de Despliegue
 
@@ -1139,9 +1195,13 @@ kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 └── scripts/                                  # force-sync-apps, test-apis, etc.
 ```
 
+**ArgoCD como motor de reconciliación:** Las siguientes capturas muestran cómo ArgoCD gestiona las Applications generadas por el ApplicationSet. Cada Application corresponde a una combinación ambiente/clúster y se sincroniza de forma independiente, permitiendo rollbacks selectivos por ambiente sin afectar el resto.
+
 [![OpenShift GitOps](docs/images/gitops.png)](docs/images/gitops.png)<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
 
 [![GitOps Applications](docs/images/gitops1.png)](docs/images/gitops1.png)<span class="img-caption">ArgoCD — Detalle de las Applications generadas por el ApplicationSet.</span>
+
+**ACM como plano de control multi-cluster:** ACM proporciona la vista unificada de todos los clústeres managed. El hub distribuye las políticas de red, seguridad y compliance a East y West de forma consistente, mientras que la Placement API decide dinámicamente dónde se despliega cada workload.
 
 [![ACM Topology](docs/images/ACM3.png)](docs/images/ACM3.png)<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
 
@@ -1151,7 +1211,7 @@ kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 
 ---
 
-# 10. Red Hat Developer Hub {#developer-hub}
+# 10. Red Hat Developer Hub
 
 [Red Hat Developer Hub](https://developers.redhat.com/rhdh) (RHDH), basado en el proyecto upstream [Backstage](https://backstage.io/), proporciona una experiencia de **autoservicio para desarrolladores** donde pueden descubrir APIs, solicitar acceso y obtener credenciales sin necesidad de tickets, intervención manual de operaciones, ni conocimiento de la infraestructura subyacente. Este enfoque *inner-loop* reduce la fricción entre equipos de desarrollo y plataforma.
 
@@ -1264,7 +1324,22 @@ sequenceDiagram
 
 ---
 
-# 11. Observabilidad {#observabilidad}
+# 11. Observabilidad
+
+### Por qué este stack de observabilidad
+
+En una arquitectura de microservicios con Service Mesh multi-cluster, la observabilidad no es un "nice to have" — es un requisito operativo. Sin visibilidad sobre lo que ocurre en la malla, diagnosticar un error 5xx o una degradación de latencia requiere recorrer manualmente logs de múltiples pods en múltiples clústeres.
+
+El stack elegido cubre las **cuatro dimensiones** de la observabilidad cloud-native:
+
+| Dimensión | Herramienta | Qué responde |
+|-----------|-------------|--------------|
+| **Métricas** | Prometheus + promxy | ¿Cuántas requests por segundo? ¿Cuál es el error rate? ¿Cómo evoluciona la latencia p99? |
+| **Dashboards** | Grafana | ¿Cómo se comparan los ambientes? ¿Hay anomalías en un clúster específico? |
+| **Topología del mesh** | Kiali | ¿Qué servicios se comunican entre sí? ¿Dónde se concentra el tráfico? ¿Hay circuitos rotos? |
+| **Trazas distribuidas** | TempoStack + OpenTelemetry | ¿Cuánto tarda cada hop en una request? ¿Dónde está el cuello de botella? |
+
+Cada componente se integra nativamente con Istio/OSSM3: ztunnel y los Waypoint Proxies emiten métricas y spans automáticamente mediante el protocolo OTLP, sin necesidad de instrumentar el código de la aplicación. Esto significa que al enrolar un namespace en Ambient Mode, la observabilidad se habilita "gratis" para todo el tráfico L4 y L7.
 
 ## 11.1 Stack de Observabilidad
 
@@ -1318,15 +1393,21 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 | `./observability/run-tests.sh prod` | Solo prod (con API_KEY_PROD) |
 | `./observability/run-tests.sh loop` | Loop continuo: dev + test + prod |
 
+**Métricas agregadas (Grafana):** El dashboard "NFL Wallet – All environments" permite comparar el comportamiento de los tres ambientes (dev/test/prod) en un solo panel. Al ejecutar el script con `loop`, se genera tráfico continuo que alimenta las métricas de request rate, response codes y duración.
+
 [![Grafana Dashboard](docs/images/grafana-dashboard.png)](docs/images/grafana-dashboard.png)<span class="img-caption">Dashboard de Grafana "NFL Wallet – All environments" con métricas: request rate, response codes, duration, error rate.</span>
 
+**Topología del mesh (Kiali):** Kiali visualiza en tiempo real las relaciones entre servicios dentro del mesh. Los nodos representan workloads y los bordes representan tráfico observado. Los colores indican el estado de salud: verde (saludable), amarillo (degradado), rojo (errores). Esto permite identificar rápidamente qué servicio está generando errores o recibiendo tráfico inesperado.
+
 [![Kiali Topology](docs/images/service-mesh-kiali-topology.png)](docs/images/service-mesh-kiali-topology.png)<span class="img-caption">Kiali — Topología del Service Mesh federado mostrando flujo de tráfico entre namespaces (dev/test/prod).</span>
+
+**Tráfico multi-cluster (Kiali):** En la configuración con ACM, Kiali muestra el grafo de servicios federado entre los clústeres East y West, incluyendo los gateways Istio y los waypoints. Esto permite verificar que el tráfico cross-cluster fluye correctamente a través del túnel HBONE.
 
 [![Kiali Service Graph](docs/images/service-mesh-kiali.png)](docs/images/service-mesh-kiali.png)<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-cluster (East/West), gateways y waypoints.</span>
 
 ---
 
-# 12. Capturas de Pantalla {#capturas}
+# 12. Capturas de Pantalla
 
 ## 12.1 Aplicación Wallet
 
@@ -1342,7 +1423,11 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 
 ## 12.2 Plataforma y Observabilidad
 
+**Dashboards de métricas:** Grafana agrega las métricas emitidas por los Waypoint Proxies y ztunnel, permitiendo monitorear request rate, response codes, duración y error rate para cada ambiente. El dashboard utiliza la variable `namespace` para filtrar entre dev, test y prod.
+
 [![Grafana Dashboard](docs/images/grafana-dashboard.png)](docs/images/grafana-dashboard.png)<span class="img-caption">Grafana — Dashboard "NFL Wallet – All environments": request rate, response codes, duration, error rate por ambiente.</span>
+
+**Topología y tráfico del mesh:** Kiali proporciona visualización en tiempo real del grafo de servicios dentro del mesh. Los nodos representan workloads y los bordes muestran tráfico HTTP observado con tasas de éxito/error. Esto permite diagnosticar problemas de conectividad sin necesidad de inspeccionar logs individuales.
 
 [![Service Mesh Grafana](docs/images/service-mesh-grafana.png)](docs/images/service-mesh-grafana.png)<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-namespace (dev/test/prod) y métricas HTTP.</span>
 
@@ -1350,13 +1435,19 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 
 [![Kiali Multi-Cluster](docs/images/service-mesh-kiali.png)](docs/images/service-mesh-kiali.png)<span class="img-caption">Kiali — Service Graph multi-cluster mostrando tráfico entre East y West con gateways Istio.</span>
 
+**Administración del mesh desde OpenShift Console:** La vista integrada de Service Mesh en OpenShift Console muestra los control planes, gateways y waypoints activos, proporcionando un overview operativo sin salir de la consola de administración.
+
 [![Service Mesh Overview](docs/images/service-mesh.png)](docs/images/service-mesh.png)<span class="img-caption">OpenShift Console — Vista del Service Mesh: control planes, gateways, waypoints y componentes.</span>
+
+**APIs expuestas:** Las APIs de NFL Wallet se documentan automáticamente via OpenAPI (Swagger). Cada microservicio expone su especificación, que luego RHDH descubre y registra en el catálogo de Backstage.
 
 [![API Customers](docs/images/api-customers.png)](docs/images/api-customers.png)<span class="img-caption">API Customers — Swagger UI del servicio de clientes.</span>
 
 [![API Bills](docs/images/api-bills.png)](docs/images/api-bills.png)<span class="img-caption">API Bills — Swagger UI del servicio de Buffalo Bills wallet.</span>
 
-## 12.5 Red Hat Developer Hub — Plugin Kuadrant {#rhdh-screenshots}
+## 12.5 Red Hat Developer Hub — Plugin Kuadrant
+
+**Portal de autoservicio para desarrolladores:** Las siguientes capturas muestran el flujo completo dentro de RHDH: desde el descubrimiento de la API y sus políticas, hasta la solicitud de acceso y la obtención de credenciales. Este flujo reemplaza el proceso manual de crear tickets y esperar aprovisionamiento — el desarrollador obtiene su API Key en minutos, con el Tier de rate limiting ya configurado.
 
 [![RHDH Policies](docs/images/rhdh-kuadrant-policies.png)](docs/images/rhdh-kuadrant-policies.png)<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Policies: PlanPolicy y AuthPolicy descubiertas para nfl-wallet-api-customers. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
 
@@ -1366,9 +1457,13 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 
 [![RHDH API Keys](docs/images/rhdh-kuadrant-api-keys.png)](docs/images/rhdh-kuadrant-api-keys.png)<span class="img-caption">RHDH Kuadrant Plugin — API Keys aprovisionadas con Tier silver aprobado, clave generada y ejemplos de código en cURL, Node.js, Python y Go.</span>
 
+**Observabilidad multi-cluster con ACM:** ACM no solo gestiona el despliegue de workloads sino también la infraestructura de observabilidad. El ApplicationSet `observability-east-west` despliega Grafana, dashboards, datasources y routes de forma idéntica en ambos clústeres, garantizando que la experiencia de monitoreo sea consistente independientemente de dónde se ejecuten los servicios.
+
 [![ACM Observability](docs/images/acm-observability-east-west.png)](docs/images/acm-observability-east-west.png)<span class="img-caption">ACM — ApplicationSet observability-east-west: topología con Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace y Route para observabilidad centralizada.</span>
 
 [![Grafana Multi-Cluster](docs/images/grafana-multi-cluster.png)](docs/images/grafana-multi-cluster.png)<span class="img-caption">Grafana Multi-Cluster — Dashboard "NFL Wallet - All environments" con filtro por cluster (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate y request rate por servicio.</span>
+
+**GitOps y gestión de clústeres:** ArgoCD reconcilia el estado declarado en Git con el estado real de cada clúster. ACM complementa esto proporcionando la vista de topología del hub y los managed clusters, y el estado de cada Application distribuida.
 
 [![GitOps ArgoCD](docs/images/gitops.png)](docs/images/gitops.png)<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
 
@@ -1380,15 +1475,21 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 
 [![ACM Detail](docs/images/ACM2.png)](docs/images/ACM2.png)<span class="img-caption">ACM — Detalle de clústeres managed y su estado.</span>
 
+**Métricas y trazas detalladas:** El stack de observabilidad proporciona múltiples niveles de detalle: desde métricas agregadas del gateway (request rate, error rate) hasta trazas distribuidas individuales que muestran el recorrido completo de una request a través de los servicios. Esto permite investigar problemas desde lo general (¿hay un aumento de errores?) hasta lo específico (¿qué request falló y en qué servicio?).
+
 [![Observability](docs/images/observability.png)](docs/images/observability.png)<span class="img-caption">Observabilidad — Consola OpenShift con métricas del monitoring stack.</span>
 
 [![Observability Metrics](docs/images/observability2.png)](docs/images/observability2.png)<span class="img-caption">Métricas del gateway (request rate, success y error rates) disponibles tras configurar PodMonitor/ServiceMonitor.</span>
 
 [![Observability Detail](docs/images/observability3.png)](docs/images/observability3.png)<span class="img-caption">Vista detallada de observabilidad con métricas Istio/Envoy del gateway NFL-Wallet.</span>
 
+**Análisis de tráfico y trazas distribuidas:** Las trazas distribuidas (via TempoStack/Jaeger) muestran el tiempo que cada hop toma dentro de una request, permitiendo identificar cuellos de botella. El análisis de tráfico complementa las trazas con una vista de flujo de requests, latencia y distribución de códigos de respuesta.
+
 [![Traffic Analysis](docs/images/traffic-analysis.png)](docs/images/traffic-analysis.png)<span class="img-caption">Análisis de tráfico — Flujo de requests, latencia y códigos de respuesta.</span>
 
 [![Jaeger Traces](docs/images/jaeger-traces.png)](docs/images/jaeger-traces.png)<span class="img-caption">Jaeger — Trazas distribuidas de los servicios del NFL Wallet.</span>
+
+**Diagramas de arquitectura:** Los diagramas de alto nivel muestran el ecosistema completo de NFL Wallet — desde el flujo GitOps hasta la interacción entre los componentes de la plataforma (Gateway API, Service Mesh, ACM, Observability).
 
 [![Architecture Workflow](docs/images/architecture-workflow.png)](docs/images/architecture-workflow.png)<span class="img-caption">Diagrama de workflow de la arquitectura GitOps completa.</span>
 
@@ -1396,7 +1497,7 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 
 ---
 
-# 12.3 Canary / Blue-Green Deployments {#canary}
+# 12.3 Canary / Blue-Green Deployments
 
 El overlay de producción incluye una **Route canary** adicional (`nfl-wallet-canary.apps.<cluster-domain>`) que apunta al mismo gateway Service (`nfl-wallet-gateway-istio`), permitiendo tráfico blue/green cuando el chart crea el HTTPRoute correspondiente.
 
@@ -1516,7 +1617,7 @@ Para cambiar el dominio, editar el patch en cada overlay correspondiente.
 
 ---
 
-# 13. Plan de Pruebas y Validación (QA) {#pruebas}
+# 13. Plan de Pruebas y Validación (QA)
 
 Una vez finalizada la sincronización de ArgoCD, el equipo de QA u Operaciones debe ejecutar el siguiente plan de pruebas para certificar el despliegue.
 
@@ -1568,7 +1669,7 @@ scripts/test-apis.sh
 
 ---
 
-# 14. Referencia de API {#api-reference}
+# 14. Referencia de API
 
 | Servicio | Puerto (Service) | Puerto (Pod) | Path API | Documentación |
 |----------|------------------|-------------|----------|---------------|
@@ -1597,7 +1698,7 @@ scripts/test-apis.sh
 
 ---
 
-# 15. Troubleshooting {#troubleshooting}
+# 15. Troubleshooting
 
 ## Pods no se comunican (Error 503)
 
@@ -1664,7 +1765,7 @@ oc get csr | grep Pending | awk '{print $1}' | xargs oc adm certificate approve
 
 ---
 
-# 16. Publicar en Artifact Hub {#artifact-hub}
+# 16. Publicar en Artifact Hub
 
 ```bash
 # 1. Empaquetar el chart
