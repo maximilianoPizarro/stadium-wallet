@@ -50,9 +50,9 @@ lang: es
 
 ---
 
-# 1. Resumen Ejecutivo
+# 1. Resumen Ejecutivo {#resumen-ejecutivo}
 
-[![High Level Architecture](docs/images/high-level-architecture.png)](docs/images/high-level-architecture.png)
+[![High Level Architecture]({{ '/images/high-level-architecture.png' | relative_url }})]({{ '/images/high-level-architecture.png' | relative_url }}){: .doc-img-link}
 <span class="img-caption">Arquitectura de alto nivel del ecosistema Stadium Wallet.</span>
 
 Este documento proporciona la guía definitiva para el despliegue, configuración y validación del ecosistema **Stadium Wallet**. La plataforma adopta un enfoque moderno basado en **GitOps**, seguridad **Zero-Trust** sin sidecars mediante **OSSM3 (Ambient Mode)**, y una gestión integral del ciclo de vida de las APIs a través de **Kuadrant** y **Red Hat Developer Hub**.
@@ -104,7 +104,7 @@ Los microservicios interactúan con fuentes de datos externas (**API de ESPN**) 
 
 ---
 
-# 2. Arquitectura y Flujos de Datos
+# 2. Arquitectura y Flujos de Datos {#arquitectura}
 
 ## 2.1 Arquitectura de Tres Capas
 
@@ -208,7 +208,7 @@ Los microservicios `api-bills` y `api-raiders` requieren datos deportivos en tie
 
 ---
 
-# 3. Stack Tecnológico
+# 3. Stack Tecnológico {#stack-tecnológico}
 
 <div class="tech-badges">
   <img src="https://img.shields.io/badge/OpenShift-EE0000?style=for-the-badge&logo=redhatopenshift&logoColor=white" alt="OpenShift">
@@ -237,7 +237,7 @@ Los microservicios `api-bills` y `api-raiders` requieren datos deportivos en tie
 
 ---
 
-# 4. Prerrequisitos de Infraestructura
+# 4. Prerrequisitos de Infraestructura {#prerrequisitos}
 
 ## 4.1 Requisitos del Clúster
 
@@ -269,7 +269,7 @@ Los siguientes operadores deben estar instalados y configurados por el administr
 
 ---
 
-# 5. Guía de Instalación GitOps
+# 5. Guía de Instalación GitOps {#despliegue}
 
 ### Por qué GitOps
 
@@ -302,17 +302,21 @@ Servicios locales:
 - **api-las-vegas-raiders** — Puerto 5003
 - **webapp** — Puerto 5160
 
-[![Podman Compose](docs/images/podman.png)](docs/images/podman.png)<span class="img-caption">Ejecución del stack con Podman Compose: webapp y tres APIs en contenedores locales.</span>
+[![Podman Compose]({{ '/images/podman.png' | relative_url }})]({{ '/images/podman.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Ejecución del stack con Podman Compose: webapp y tres APIs en contenedores locales.</span>
 
 ## 5.2 Desarrollo con Red Hat OpenShift Dev Spaces
 
 El repositorio incluye un **devfile.yaml** para Red Hat OpenShift Dev Spaces, permitiendo desarrollar y testear en un IDE cloud sin instalar .NET ni Node.js localmente.
 
-[![OpenShift Dev Spaces](docs/images/devspaces.png)](docs/images/devspaces.png)<span class="img-caption">Workspace de OpenShift Dev Spaces con el proyecto Stadium Wallet.</span>
+[![OpenShift Dev Spaces]({{ '/images/devspaces.png' | relative_url }})]({{ '/images/devspaces.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Workspace de OpenShift Dev Spaces con el proyecto Stadium Wallet.</span>
 
-[![Dev Spaces Build](docs/images/devspaces2.png)](docs/images/devspaces2.png)<span class="img-caption">Build y ejecución en Dev Spaces: compilar e iniciar la webapp y las APIs desde el workspace.</span>
+[![Dev Spaces Build]({{ '/images/devspaces2.png' | relative_url }})]({{ '/images/devspaces2.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Build y ejecución en Dev Spaces: compilar e iniciar la webapp y las APIs desde el workspace.</span>
 
-[![Dev Spaces App](docs/images/devspaces3.png)](docs/images/devspaces3.png)<span class="img-caption">Aplicación ejecutándose desde Dev Spaces: frontend y APIs servidos desde la nube.</span>
+[![Dev Spaces App]({{ '/images/devspaces3.png' | relative_url }})]({{ '/images/devspaces3.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Aplicación ejecutándose desde Dev Spaces: frontend y APIs servidos desde la nube.</span>
 
 ## 5.3 Despliegue con Helm Chart
 
@@ -366,11 +370,12 @@ spec:
 
 > Una vez aplicado, ArgoCD desplegará los Deployments, Services, HTTPRoutes, y las políticas de Kuadrant de forma ordenada.
 
-[![OpenShift Topology](docs/images/topology.png)](docs/images/topology.png)<span class="img-caption">Vista de topología en OpenShift: webapp → api-customers, api-bills, api-raiders.</span>
+[![OpenShift Topology]({{ '/images/topology.png' | relative_url }})]({{ '/images/topology.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Vista de topología en OpenShift: webapp → api-customers, api-bills, api-raiders.</span>
 
 ---
 
-# 6. Service Mesh 3 (Ambient Mode)
+# 6. Service Mesh 3 (Ambient Mode) {#service-mesh}
 
 OpenShift Service Mesh 3 (OSSM3) implementa un modelo de seguridad **Zero Trust** en la capa de red: cada conexión entre servicios se autentica y encripta automáticamente mediante mTLS, independientemente de su origen. El principio es *"nunca confiar, siempre verificar"* — ningún servicio puede comunicarse con otro sin presentar una identidad criptográfica válida emitida por la CA del mesh. Esto elimina la confianza implícita basada en la topología de red y proporciona defensa en profundidad contra movimiento lateral.
 
@@ -490,7 +495,7 @@ La federación multi-cluster establece un dominio de confianza unificado entre l
 
 ---
 
-# 7. Connectivity Link y Gateway API
+# 7. Connectivity Link y Gateway API {#connectivity-link}
 
 [Red Hat Connectivity Link](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) es un framework Kubernetes-native que unifica **Gateway API**, **gestión de políticas** (autenticación, rate limiting) y **DNS** en una experiencia declarativa. Basado en el proyecto upstream [Kuadrant](https://kuadrant.io/), Connectivity Link permite definir políticas de conectividad como CRDs que se aplican automáticamente al Gateway, eliminando la necesidad de configurar proxies, rate limiters y auth servers de forma manual.
 
@@ -626,13 +631,15 @@ helm upgrade nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
   --set gateway.authPolicy.bills.enabled=true
 ```
 
-[![Connectivity Link](docs/images/connectivity-link.png)](docs/images/connectivity-link.png)<span class="img-caption">Connectivity Link: Gateway API y HTTPRoutes exponiendo webapp y APIs.</span>
+[![Connectivity Link]({{ '/images/connectivity-link.png' | relative_url }})]({{ '/images/connectivity-link.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Connectivity Link: Gateway API y HTTPRoutes exponiendo webapp y APIs.</span>
 
-[![Connectivity Link con Auth](docs/images/connectivity-link-auth.png)](docs/images/connectivity-link-auth.png)<span class="img-caption">Connectivity Link con Kuadrant AuthPolicy (X-API-Key) y RateLimitPolicy en /api-bills.</span>
+[![Connectivity Link con Auth]({{ '/images/connectivity-link-auth.png' | relative_url }})]({{ '/images/connectivity-link-auth.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Connectivity Link con Kuadrant AuthPolicy (X-API-Key) y RateLimitPolicy en /api-bills.</span>
 
 ---
 
-# 8. Seguridad: API Keys y Políticas
+# 8. Seguridad: API Keys y Políticas {#seguridad}
 
 La seguridad en Stadium Wallet se implementa en múltiples capas, siguiendo el principio de defensa en profundidad. El flujo end-to-end de un request autenticado es:
 
@@ -717,7 +724,7 @@ Stadium Wallet implementa una **estrategia de seguridad progresiva** donde cada 
 - **Test con auth** valida que la integración con Authorino y las API Keys funciona correctamente antes de llegar a producción
 - **Prod con auth + canary + ambient** garantiza Zero Trust completo: mTLS en todo el tráfico inter-servicio, validación de credenciales en el Gateway, rate limiting por Tier, y capacidad de despliegue canary para rollouts seguros
 
-## 8.5 Restricción de Acceso entre Namespaces (Test / Prod)
+## 8.5 Restricción de Acceso entre Namespaces (Test / Prod) {#namespace-isolation}
 
 En un entorno multi-ambiente sobre el mismo clúster, es crítico que los servicios de **test** no puedan acceder a los de **prod** y viceversa. OSSM3 en Ambient Mode proporciona este aislamiento a través de **AuthorizationPolicy** de Istio a nivel de namespace.
 
@@ -797,7 +804,7 @@ ArgoCD sincroniza estas políticas automáticamente al desplegar cada ambiente.
 
 > **Dev sin restricción:** El ambiente dev (`nfl-wallet-dev`) intencionalmente no aplica esta restricción para facilitar el desarrollo y debugging cross-service.
 
-## 8.5.1 Políticas entre Namespaces con Gateway API e Istio
+## 8.5.1 Políticas entre Namespaces con Gateway API e Istio {#gateway-namespace-policies}
 
 Además de las AuthorizationPolicy a nivel de workload, la **Gateway API** e **Istio** ofrecen mecanismos adicionales para controlar el tráfico entre namespaces. Estas opciones operan a diferentes niveles (L4/L7) y ofrecen granularidad distinta.
 
@@ -969,7 +976,7 @@ spec:
 
 > **Recomendación:** Para Stadium Wallet, se combinan **AuthorizationPolicy** (aislamiento de workloads), **PeerAuthentication STRICT** (mTLS obligatorio), y **allowedRoutes** en el Gateway (scoping de rutas por namespace). Esta combinación provee defensa en profundidad.
 
-## 8.6 Failover Multi-Cluster con DNSPolicy y Route 53
+## 8.6 Failover Multi-Cluster con DNSPolicy y Route 53 {#dns-failover}
 
 Para lograr **alta disponibilidad geográfica** y failover automático entre los clústeres East y West, Kuadrant integra **DNSPolicy** con **Amazon Route 53** (u otros proveedores DNS compatibles). Esto permite que, si un clúster falla, el tráfico se redirija automáticamente al clúster sano.
 
@@ -1118,7 +1125,7 @@ spec:
 
 ---
 
-# 9. GitOps Multi-Cluster con ACM
+# 9. GitOps Multi-Cluster con ACM {#gitops}
 
 ### Por qué Red Hat Advanced Cluster Management
 
@@ -1197,21 +1204,26 @@ kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 
 **ArgoCD como motor de reconciliación:** Las siguientes capturas muestran cómo ArgoCD gestiona las Applications generadas por el ApplicationSet. Cada Application corresponde a una combinación ambiente/clúster y se sincroniza de forma independiente, permitiendo rollbacks selectivos por ambiente sin afectar el resto.
 
-[![OpenShift GitOps](docs/images/gitops.png)](docs/images/gitops.png)<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
+[![OpenShift GitOps]({{ '/images/gitops.png' | relative_url }})]({{ '/images/gitops.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
 
-[![GitOps Applications](docs/images/gitops1.png)](docs/images/gitops1.png)<span class="img-caption">ArgoCD — Detalle de las Applications generadas por el ApplicationSet.</span>
+[![GitOps Applications]({{ '/images/gitops1.png' | relative_url }})]({{ '/images/gitops1.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ArgoCD — Detalle de las Applications generadas por el ApplicationSet.</span>
 
 **ACM como plano de control multi-cluster:** ACM proporciona la vista unificada de todos los clústeres managed. El hub distribuye las políticas de red, seguridad y compliance a East y West de forma consistente, mientras que la Placement API decide dinámicamente dónde se despliega cada workload.
 
-[![ACM Topology](docs/images/ACM3.png)](docs/images/ACM3.png)<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
+[![ACM Topology]({{ '/images/ACM3.png' | relative_url }})]({{ '/images/ACM3.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
 
-[![ACM Applications](docs/images/ACM4.png)](docs/images/ACM4.png)<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas (dev/test/prod × east/west).</span>
+[![ACM Applications]({{ '/images/ACM4.png' | relative_url }})]({{ '/images/ACM4.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas (dev/test/prod × east/west).</span>
 
-[![ACM Apps Overview](docs/images/acm-apps.png)](docs/images/acm-apps.png)<span class="img-caption">ACM — Vista general de las aplicaciones desplegadas en los managed clusters.</span>
+[![ACM Apps Overview]({{ '/images/acm-apps.png' | relative_url }})]({{ '/images/acm-apps.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — Vista general de las aplicaciones desplegadas en los managed clusters.</span>
 
 ---
 
-# 10. Red Hat Developer Hub
+# 10. Red Hat Developer Hub {#developer-hub}
 
 [Red Hat Developer Hub](https://developers.redhat.com/rhdh) (RHDH), basado en el proyecto upstream [Backstage](https://backstage.io/), proporciona una experiencia de **autoservicio para desarrolladores** donde pueden descubrir APIs, solicitar acceso y obtener credenciales sin necesidad de tickets, intervención manual de operaciones, ni conocimiento de la infraestructura subyacente. Este enfoque *inner-loop* reduce la fricción entre equipos de desarrollo y plataforma.
 
@@ -1238,13 +1250,17 @@ Cuando un administrador define un Tier via `PlanPolicy`, Kuadrant crea automáti
 5. **Aprobación y Aprovisionamiento:** Kuadrant orquesta la creación de la credencial (API Key o Token OIDC)
 6. **Enforcement:** El Gateway API intercepta, valida la credencial y aplica el límite de 500 peticiones/día
 
-[![RHDH Kuadrant Policies](docs/images/rhdh-kuadrant-policies.png)](docs/images/rhdh-kuadrant-policies.png)<span class="img-caption">Red Hat Developer Hub — Plugin Kuadrant: vista de Policies para nfl-wallet-api-customers. PlanPolicy y AuthPolicy descubiertas. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
+[![RHDH Kuadrant Policies]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }})]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Red Hat Developer Hub — Plugin Kuadrant: vista de Policies para nfl-wallet-api-customers. PlanPolicy y AuthPolicy descubiertas. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
 
-[![RHDH API Definition](docs/images/rhdh-kuadrant-api-definition.png)](docs/images/rhdh-kuadrant-api-definition.png)<span class="img-caption">Red Hat Developer Hub — Definición de API: Stadium Wallet - Customers API v1 (OAS 3.0). Endpoints GET /Customers y GET /Customers/{id} con botón Authorize para autenticación.</span>
+[![RHDH API Definition]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Red Hat Developer Hub — Definición de API: Stadium Wallet - Customers API v1 (OAS 3.0). Endpoints GET /Customers y GET /Customers/{id} con botón Authorize para autenticación.</span>
 
-[![RHDH Request Access](docs/images/rhdh-kuadrant-request-access.png)](docs/images/rhdh-kuadrant-request-access.png)<span class="img-caption">Red Hat Developer Hub — Flujo de solicitud de acceso: modal "Request API Access" con selección de Tier (silver - 500 per daily) y campo de Use Case. Owner: Maximiliano Pizarro, Lifecycle: production.</span>
+[![RHDH Request Access]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }})]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Red Hat Developer Hub — Flujo de solicitud de acceso: modal "Request API Access" con selección de Tier (silver - 500 per daily) y campo de Use Case. Owner: Maximiliano Pizarro, Lifecycle: production.</span>
 
-[![RHDH API Keys](docs/images/rhdh-kuadrant-api-keys.png)](docs/images/rhdh-kuadrant-api-keys.png)<span class="img-caption">Red Hat Developer Hub — API Keys aprovisionadas: Tier silver aprobado (2/3/2026), API Key generada con ejemplos de uso en cURL, Node.js, Python y Go.</span>
+[![RHDH API Keys]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Red Hat Developer Hub — API Keys aprovisionadas: Tier silver aprobado (2/3/2026), API Key generada con ejemplos de uso en cURL, Node.js, Python y Go.</span>
 
 ## 10.2 Uso de la API Key desde Developer Hub
 
@@ -1324,7 +1340,7 @@ sequenceDiagram
 
 ---
 
-# 11. Observabilidad
+# 11. Observabilidad {#observabilidad}
 
 ### Por qué este stack de observabilidad
 
@@ -1395,103 +1411,134 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 
 **Métricas agregadas (Grafana):** El dashboard "Stadium Wallet – All environments" permite comparar el comportamiento de los tres ambientes (dev/test/prod) en un solo panel. Al ejecutar el script con `loop`, se genera tráfico continuo que alimenta las métricas de request rate, response codes y duración.
 
-[![Grafana Dashboard](docs/images/grafana-dashboard.png)](docs/images/grafana-dashboard.png)<span class="img-caption">Dashboard de Grafana "Stadium Wallet – All environments" con métricas: request rate, response codes, duration, error rate.</span>
+[![Grafana Dashboard]({{ '/images/grafana-dashboard.png' | relative_url }})]({{ '/images/grafana-dashboard.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Dashboard de Grafana "Stadium Wallet – All environments" con métricas: request rate, response codes, duration, error rate.</span>
 
 **Topología del mesh (Kiali):** Kiali visualiza en tiempo real las relaciones entre servicios dentro del mesh. Los nodos representan workloads y los bordes representan tráfico observado. Los colores indican el estado de salud: verde (saludable), amarillo (degradado), rojo (errores). Esto permite identificar rápidamente qué servicio está generando errores o recibiendo tráfico inesperado.
 
-[![Kiali Topology](docs/images/service-mesh-kiali-topology.png)](docs/images/service-mesh-kiali-topology.png)<span class="img-caption">Kiali — Topología del Service Mesh federado mostrando flujo de tráfico entre namespaces (dev/test/prod).</span>
+[![Kiali Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Kiali — Topología del Service Mesh federado mostrando flujo de tráfico entre namespaces (dev/test/prod).</span>
 
 **Tráfico multi-cluster (Kiali):** En la configuración con ACM, Kiali muestra el grafo de servicios federado entre los clústeres East y West, incluyendo los gateways Istio y los waypoints. Esto permite verificar que el tráfico cross-cluster fluye correctamente a través del túnel HBONE.
 
-[![Kiali Service Graph](docs/images/service-mesh-kiali.png)](docs/images/service-mesh-kiali.png)<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-cluster (East/West), gateways y waypoints.</span>
+[![Kiali Service Graph]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-cluster (East/West), gateways y waypoints.</span>
 
 ---
 
-# 12. Capturas de Pantalla
+# 12. Capturas de Pantalla {#capturas}
 
 ## 12.1 Aplicación Wallet
 
-[![Wallet Landing](docs/images/walletlanding.png)](docs/images/walletlanding.png)<span class="img-caption">Wallet Landing Page — Punto de entrada de la aplicación web Stadium Wallet.</span>
+[![Wallet Landing]({{ '/images/walletlanding.png' | relative_url }})]({{ '/images/walletlanding.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Wallet Landing Page — Punto de entrada de la aplicación web Stadium Wallet.</span>
 
-[![Customer List](docs/images/wallet.png)](docs/images/wallet.png)<span class="img-caption">Lista de Clientes — Seleccionar un cliente para ver sus wallets por equipo.</span>
+[![Customer List]({{ '/images/wallet.png' | relative_url }})]({{ '/images/wallet.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Lista de Clientes — Seleccionar un cliente para ver sus wallets por equipo.</span>
 
-[![Wallet Balances](docs/images/wallet2.png)](docs/images/wallet2.png)<span class="img-caption">Balances de Wallets — Buffalo Bills y Las Vegas Raiders: saldos y transacciones.</span>
+[![Wallet Balances]({{ '/images/wallet2.png' | relative_url }})]({{ '/images/wallet2.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Balances de Wallets — Buffalo Bills y Las Vegas Raiders: saldos y transacciones.</span>
 
-[![QR Payment](docs/images/wallet3.png)](docs/images/wallet3.png)<span class="img-caption">Flujo de Pago QR — Pago desde una wallet de equipo.</span>
+[![QR Payment]({{ '/images/wallet3.png' | relative_url }})]({{ '/images/wallet3.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Flujo de Pago QR — Pago desde una wallet de equipo.</span>
 
-[![Load Balance](docs/images/wallet4.png)](docs/images/wallet4.png)<span class="img-caption">Carga de Saldo — Agregar fondos a una wallet de equipo.</span>
+[![Load Balance]({{ '/images/wallet4.png' | relative_url }})]({{ '/images/wallet4.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Carga de Saldo — Agregar fondos a una wallet de equipo.</span>
 
 ## 12.2 Plataforma y Observabilidad
 
 **Dashboards de métricas:** Grafana agrega las métricas emitidas por los Waypoint Proxies y ztunnel, permitiendo monitorear request rate, response codes, duración y error rate para cada ambiente. El dashboard utiliza la variable `namespace` para filtrar entre dev, test y prod.
 
-[![Grafana Dashboard](docs/images/grafana-dashboard.png)](docs/images/grafana-dashboard.png)<span class="img-caption">Grafana — Dashboard "Stadium Wallet – All environments": request rate, response codes, duration, error rate por ambiente.</span>
+[![Grafana Dashboard]({{ '/images/grafana-dashboard.png' | relative_url }})]({{ '/images/grafana-dashboard.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Grafana — Dashboard "Stadium Wallet – All environments": request rate, response codes, duration, error rate por ambiente.</span>
 
 **Topología y tráfico del mesh:** Kiali proporciona visualización en tiempo real del grafo de servicios dentro del mesh. Los nodos representan workloads y los bordes muestran tráfico HTTP observado con tasas de éxito/error. Esto permite diagnosticar problemas de conectividad sin necesidad de inspeccionar logs individuales.
 
-[![Service Mesh Grafana](docs/images/service-mesh-grafana.png)](docs/images/service-mesh-grafana.png)<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-namespace (dev/test/prod) y métricas HTTP.</span>
+[![Service Mesh Grafana]({{ '/images/service-mesh-grafana.png' | relative_url }})]({{ '/images/service-mesh-grafana.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-namespace (dev/test/prod) y métricas HTTP.</span>
 
-[![Kiali Topology](docs/images/service-mesh-kiali-topology.png)](docs/images/service-mesh-kiali-topology.png)<span class="img-caption">Kiali — Topología detallada del Service Mesh con leyenda de nodos, workloads y servicios.</span>
+[![Kiali Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Kiali — Topología detallada del Service Mesh con leyenda de nodos, workloads y servicios.</span>
 
-[![Kiali Multi-Cluster](docs/images/service-mesh-kiali.png)](docs/images/service-mesh-kiali.png)<span class="img-caption">Kiali — Service Graph multi-cluster mostrando tráfico entre East y West con gateways Istio.</span>
+[![Kiali Multi-Cluster]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Kiali — Service Graph multi-cluster mostrando tráfico entre East y West con gateways Istio.</span>
 
 **Administración del mesh desde OpenShift Console:** La vista integrada de Service Mesh en OpenShift Console muestra los control planes, gateways y waypoints activos, proporcionando un overview operativo sin salir de la consola de administración.
 
-[![Service Mesh Overview](docs/images/service-mesh.png)](docs/images/service-mesh.png)<span class="img-caption">OpenShift Console — Vista del Service Mesh: control planes, gateways, waypoints y componentes.</span>
+[![Service Mesh Overview]({{ '/images/service-mesh.png' | relative_url }})]({{ '/images/service-mesh.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">OpenShift Console — Vista del Service Mesh: control planes, gateways, waypoints y componentes.</span>
 
 **APIs expuestas:** Las APIs de Stadium Wallet se documentan automáticamente via OpenAPI (Swagger). Cada microservicio expone su especificación, que luego RHDH descubre y registra en el catálogo de Backstage.
 
-[![API Customers](docs/images/api-customers.png)](docs/images/api-customers.png)<span class="img-caption">API Customers — Swagger UI del servicio de clientes.</span>
+[![API Customers]({{ '/images/api-customers.png' | relative_url }})]({{ '/images/api-customers.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">API Customers — Swagger UI del servicio de clientes.</span>
 
-[![API Bills](docs/images/api-bills.png)](docs/images/api-bills.png)<span class="img-caption">API Bills — Swagger UI del servicio de Buffalo Bills wallet.</span>
+[![API Bills]({{ '/images/api-bills.png' | relative_url }})]({{ '/images/api-bills.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">API Bills — Swagger UI del servicio de Buffalo Bills wallet.</span>
 
-## 12.5 Red Hat Developer Hub — Plugin Kuadrant
+## 12.5 Red Hat Developer Hub — Plugin Kuadrant {#rhdh-screenshots}
 
 **Portal de autoservicio para desarrolladores:** Las siguientes capturas muestran el flujo completo dentro de RHDH: desde el descubrimiento de la API y sus políticas, hasta la solicitud de acceso y la obtención de credenciales. Este flujo reemplaza el proceso manual de crear tickets y esperar aprovisionamiento — el desarrollador obtiene su API Key en minutos, con el Tier de rate limiting ya configurado.
 
-[![RHDH Policies](docs/images/rhdh-kuadrant-policies.png)](docs/images/rhdh-kuadrant-policies.png)<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Policies: PlanPolicy y AuthPolicy descubiertas para nfl-wallet-api-customers. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
+[![RHDH Policies]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }})]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Policies: PlanPolicy y AuthPolicy descubiertas para nfl-wallet-api-customers. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
 
-[![RHDH API Definition](docs/images/rhdh-kuadrant-api-definition.png)](docs/images/rhdh-kuadrant-api-definition.png)<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Definition: Stadium Wallet - Customers API v1 (OAS 3.0) con endpoints documentados y selector de servidor por ambiente.</span>
+[![RHDH API Definition]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Definition: Stadium Wallet - Customers API v1 (OAS 3.0) con endpoints documentados y selector de servidor por ambiente.</span>
 
-[![RHDH Request Access](docs/images/rhdh-kuadrant-request-access.png)](docs/images/rhdh-kuadrant-request-access.png)<span class="img-caption">RHDH Kuadrant Plugin — Modal de solicitud de acceso: selección de Tier silver (500 per daily), campo de Use Case y botón Submit Request.</span>
+[![RHDH Request Access]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }})]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">RHDH Kuadrant Plugin — Modal de solicitud de acceso: selección de Tier silver (500 per daily), campo de Use Case y botón Submit Request.</span>
 
-[![RHDH API Keys](docs/images/rhdh-kuadrant-api-keys.png)](docs/images/rhdh-kuadrant-api-keys.png)<span class="img-caption">RHDH Kuadrant Plugin — API Keys aprovisionadas con Tier silver aprobado, clave generada y ejemplos de código en cURL, Node.js, Python y Go.</span>
+[![RHDH API Keys]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">RHDH Kuadrant Plugin — API Keys aprovisionadas con Tier silver aprobado, clave generada y ejemplos de código en cURL, Node.js, Python y Go.</span>
 
 **Observabilidad multi-cluster con ACM:** ACM no solo gestiona el despliegue de workloads sino también la infraestructura de observabilidad. El ApplicationSet `observability-east-west` despliega Grafana, dashboards, datasources y routes de forma idéntica en ambos clústeres, garantizando que la experiencia de monitoreo sea consistente independientemente de dónde se ejecuten los servicios.
 
-[![ACM Observability](docs/images/acm-observability-east-west.png)](docs/images/acm-observability-east-west.png)<span class="img-caption">ACM — ApplicationSet observability-east-west: topología con Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace y Route para observabilidad centralizada.</span>
+[![ACM Observability]({{ '/images/acm-observability-east-west.png' | relative_url }})]({{ '/images/acm-observability-east-west.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — ApplicationSet observability-east-west: topología con Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace y Route para observabilidad centralizada.</span>
 
-[![Grafana Multi-Cluster](docs/images/grafana-multi-cluster.png)](docs/images/grafana-multi-cluster.png)<span class="img-caption">Grafana Multi-Cluster — Dashboard "Stadium Wallet - All environments" con filtro por cluster (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate y request rate por servicio.</span>
+[![Grafana Multi-Cluster]({{ '/images/grafana-multi-cluster.png' | relative_url }})]({{ '/images/grafana-multi-cluster.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Grafana Multi-Cluster — Dashboard "Stadium Wallet - All environments" con filtro por cluster (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate y request rate por servicio.</span>
 
 **GitOps y gestión de clústeres:** ArgoCD reconcilia el estado declarado en Git con el estado real de cada clúster. ACM complementa esto proporcionando la vista de topología del hub y los managed clusters, y el estado de cada Application distribuida.
 
-[![GitOps ArgoCD](docs/images/gitops.png)](docs/images/gitops.png)<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
+[![GitOps ArgoCD]({{ '/images/gitops.png' | relative_url }})]({{ '/images/gitops.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
 
-[![ACM Topology](docs/images/ACM3.png)](docs/images/ACM3.png)<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
+[![ACM Topology]({{ '/images/ACM3.png' | relative_url }})]({{ '/images/ACM3.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
 
-[![ACM Applications](docs/images/ACM4.png)](docs/images/ACM4.png)<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas.</span>
+[![ACM Applications]({{ '/images/ACM4.png' | relative_url }})]({{ '/images/ACM4.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas.</span>
 
-[![ACM Overview](docs/images/ACM.png)](docs/images/ACM.png)<span class="img-caption">ACM — Vista general del Advanced Cluster Management.</span>
+[![ACM Overview]({{ '/images/ACM.png' | relative_url }})]({{ '/images/ACM.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — Vista general del Advanced Cluster Management.</span>
 
-[![ACM Detail](docs/images/ACM2.png)](docs/images/ACM2.png)<span class="img-caption">ACM — Detalle de clústeres managed y su estado.</span>
+[![ACM Detail]({{ '/images/ACM2.png' | relative_url }})]({{ '/images/ACM2.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — Detalle de clústeres managed y su estado.</span>
 
 **Métricas y trazas detalladas:** El stack de observabilidad proporciona múltiples niveles de detalle: desde métricas agregadas del gateway (request rate, error rate) hasta trazas distribuidas individuales que muestran el recorrido completo de una request a través de los servicios. Esto permite investigar problemas desde lo general (¿hay un aumento de errores?) hasta lo específico (¿qué request falló y en qué servicio?).
 
-[![Observability](docs/images/observability.png)](docs/images/observability.png)<span class="img-caption">Observabilidad — Consola OpenShift con métricas del monitoring stack.</span>
+[![Observability]({{ '/images/observability.png' | relative_url }})]({{ '/images/observability.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Observabilidad — Consola OpenShift con métricas del monitoring stack.</span>
 
-[![Observability Metrics](docs/images/observability2.png)](docs/images/observability2.png)<span class="img-caption">Métricas del gateway (request rate, success y error rates) disponibles tras configurar PodMonitor/ServiceMonitor.</span>
+[![Observability Metrics]({{ '/images/observability2.png' | relative_url }})]({{ '/images/observability2.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Métricas del gateway (request rate, success y error rates) disponibles tras configurar PodMonitor/ServiceMonitor.</span>
 
-[![Observability Detail](docs/images/observability3.png)](docs/images/observability3.png)<span class="img-caption">Vista detallada de observabilidad con métricas Istio/Envoy del gateway Stadium Wallet.</span>
+[![Observability Detail]({{ '/images/observability3.png' | relative_url }})]({{ '/images/observability3.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Vista detallada de observabilidad con métricas Istio/Envoy del gateway Stadium Wallet.</span>
 
 **Análisis de tráfico y trazas distribuidas:** Las trazas distribuidas (via TempoStack/Jaeger) muestran el tiempo que cada hop toma dentro de una request, permitiendo identificar cuellos de botella. El análisis de tráfico complementa las trazas con una vista de flujo de requests, latencia y distribución de códigos de respuesta.
 
-[![Traffic Analysis](docs/images/traffic-analysis.png)](docs/images/traffic-analysis.png)<span class="img-caption">Análisis de tráfico — Flujo de requests, latencia y códigos de respuesta.</span>
+[![Traffic Analysis]({{ '/images/traffic-analysis.png' | relative_url }})]({{ '/images/traffic-analysis.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Análisis de tráfico — Flujo de requests, latencia y códigos de respuesta.</span>
 
-[![Jaeger Traces](docs/images/jaeger-traces.png)](docs/images/jaeger-traces.png)<span class="img-caption">Jaeger — Trazas distribuidas de los servicios del Stadium Wallet.</span>
+[![Jaeger Traces]({{ '/images/jaeger-traces.png' | relative_url }})]({{ '/images/jaeger-traces.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Jaeger — Trazas distribuidas de los servicios del Stadium Wallet.</span>
 
 ---
 
-# 12.3 Canary / Blue-Green Deployments
+# 12.3 Canary / Blue-Green Deployments {#canary}
 
 El overlay de producción incluye una **Route canary** adicional (`nfl-wallet-canary.apps.<cluster-domain>`) que apunta al mismo gateway Service (`nfl-wallet-gateway-istio`), permitiendo tráfico blue/green cuando el chart crea el HTTPRoute correspondiente.
 
@@ -1499,9 +1546,11 @@ El overlay de producción incluye una **Route canary** adicional (`nfl-wallet-ca
 
 Las siguientes capturas de Grafana muestran el comportamiento del tráfico durante un despliegue canary, donde se observa la distribución de requests entre los ambientes dev, test y prod:
 
-[![Canary Blue-Green - Total Requests](docs/images/canary-blue-green.png)](docs/images/canary-blue-green.png)<span class="img-caption">Total de requests (última hora) por ambiente durante un despliegue canary — nfl-wallet-dev (verde), nfl-wallet-prod (amarillo), nfl-wallet-test (azul). Se observa el incremento gradual de tráfico hacia producción.</span>
+[![Canary Blue-Green - Total Requests]({{ '/images/canary-blue-green.png' | relative_url }})]({{ '/images/canary-blue-green.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Total de requests (última hora) por ambiente durante un despliegue canary — nfl-wallet-dev (verde), nfl-wallet-prod (amarillo), nfl-wallet-test (azul). Se observa el incremento gradual de tráfico hacia producción.</span>
 
-[![Canary Blue-Green - Request Rate](docs/images/canary-blue-green-2.png)](docs/images/canary-blue-green-2.png)<span class="img-caption">Request rate por ambiente y servicio durante canary — Se visualiza cómo api-customers (dev), gateway-istio (prod/test) y webapp distribuyen el tráfico entre versiones.</span>
+[![Canary Blue-Green - Request Rate]({{ '/images/canary-blue-green-2.png' | relative_url }})]({{ '/images/canary-blue-green-2.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Request rate por ambiente y servicio durante canary — Se visualiza cómo api-customers (dev), gateway-istio (prod/test) y webapp distribuyen el tráfico entre versiones.</span>
 
 ### Definición del Canary con HTTPRoutes
 
@@ -1611,7 +1660,7 @@ Para cambiar el dominio, editar el patch en cada overlay correspondiente.
 
 ---
 
-# 13. Plan de Pruebas y Validación (QA)
+# 13. Plan de Pruebas y Validación (QA) {#pruebas}
 
 Una vez finalizada la sincronización de ArgoCD, el equipo de QA u Operaciones debe ejecutar el siguiente plan de pruebas para certificar el despliegue.
 
@@ -1663,7 +1712,7 @@ scripts/test-apis.sh
 
 ---
 
-# 14. Referencia de API
+# 14. Referencia de API {#api-reference}
 
 | Servicio | Puerto (Service) | Puerto (Pod) | Path API | Documentación |
 |----------|------------------|-------------|----------|---------------|
@@ -1692,7 +1741,7 @@ scripts/test-apis.sh
 
 ---
 
-# 15. Troubleshooting
+# 15. Troubleshooting {#troubleshooting}
 
 ## Pods no se comunican (Error 503)
 
@@ -1759,7 +1808,7 @@ oc get csr | grep Pending | awk '{print $1}' | xargs oc adm certificate approve
 
 ---
 
-# 16. Publicar en Artifact Hub
+# 16. Publicar en Artifact Hub {#artifact-hub}
 
 ```bash
 # 1. Empaquetar el chart

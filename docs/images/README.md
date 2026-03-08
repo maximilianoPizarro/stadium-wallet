@@ -29,7 +29,7 @@ Place the following screenshots and images in this directory for the documentati
 - `ACM4.png` — ACM Applications view
 
 ## Observability
-- `grafana-dashboard.png` — Grafana NFL Wallet dashboard
+- `grafana-dashboard.png` — Grafana Stadium Wallet dashboard
 - `kiali-topology.png` — Kiali Service Mesh topology
 - `observability.png` — Observability overview (OpenShift console)
 - `observability2.png` — Gateway metrics

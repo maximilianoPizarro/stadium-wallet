@@ -1,7 +1,7 @@
-# NFL Stadium Wallet — Unified Documentation
+# Stadium Wallet — Unified Documentation
 # Red Hat–inspired branding for GitHub Pages
-title: "NFL Stadium Wallet"
-description: "Centralized digital wallet for NFL stadiums — Architecture, GitOps, Service Mesh, Observability & Testing Guide"
+title: "Stadium Wallet"
+description: "Centralized digital wallet for stadiums — Architecture, GitOps, Service Mesh, Observability & Testing Guide"
 baseurl: "/nfl-wallet-docs"
 url: "https://maximilianopizarro.github.io"
 github_repo: "https://github.com/maximilianopizarro/NFL-Wallet"

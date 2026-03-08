@@ -1,8 +1,8 @@
 ---
 layout: default
-title: "Documentación Completa"
-description: "Guía Oficial de Instalación, Pruebas y Arquitectura del ecosistema NFL Stadium Wallet — OpenShift, GitOps, Service Mesh 3, Kuadrant, Gateway API y observabilidad."
-lang: es
+title: "Complete Documentation"
+description: "Official Installation, Testing & Architecture Guide for the Stadium Wallet ecosystem — OpenShift, GitOps, Service Mesh 3, Kuadrant, Gateway API & Observability."
+lang: en
 ---
 
 <section class="hero-section">
@@ -14,117 +14,117 @@ lang: es
     <img src="https://img.shields.io/badge/.NET%208-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 8">
     <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js">
   </div>
-  <h1>NFL Stadium <span>Wallet</span></h1>
-  <p class="hero-sub">Guía Oficial de Instalación, Pruebas y Arquitectura — Ecosistema completo de billetera digital para estadios de la NFL sobre Red Hat OpenShift.</p>
-  <p class="hero-meta"><strong>Versión:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro &nbsp;|&nbsp; <strong>Infra & Service Mesh:</strong> <a href="https://github.com/panchoraposo">Francisco Raposo</a></p>
+  <h1>Stadium <span>Wallet</span></h1>
+  <p class="hero-sub">Official Installation, Testing &amp; Architecture Guide — Complete digital wallet ecosystem for stadiums on Red Hat OpenShift.</p>
+  <p class="hero-meta"><strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro &nbsp;|&nbsp; <strong>Infra & Service Mesh:</strong> <a href="https://github.com/panchoraposo">Francisco Raposo</a></p>
 </section>
 
 <div class="toc" markdown="0">
-  <h3>Tabla de Contenidos</h3>
+  <h3>Table of Contents</h3>
   <ol>
-    <li><a href="#resumen-ejecutivo">Resumen Ejecutivo</a></li>
-    <li><a href="#arquitectura">Arquitectura y Flujos de Datos</a></li>
-    <li><a href="#stack-tecnológico">Stack Tecnológico</a></li>
-    <li><a href="#prerrequisitos">Prerrequisitos de Infraestructura</a></li>
-    <li><a href="#despliegue">Guía de Instalación GitOps</a></li>
+    <li><a href="#executive-summary">Executive Summary</a></li>
+    <li><a href="#architecture">Architecture &amp; Data Flows</a></li>
+    <li><a href="#technology-stack">Technology Stack</a></li>
+    <li><a href="#prerequisites">Infrastructure Prerequisites</a></li>
+    <li><a href="#deployment">GitOps Installation Guide</a></li>
     <li><a href="#service-mesh">Service Mesh 3 (Ambient Mode)</a></li>
-    <li><a href="#connectivity-link">Connectivity Link y Gateway API</a></li>
-    <li><a href="#seguridad">Seguridad: API Keys y Políticas</a>
+    <li><a href="#connectivity-link">Connectivity Link &amp; Gateway API</a></li>
+    <li><a href="#security">Security: API Keys &amp; Policies</a>
       <ul>
-        <li><a href="#namespace-isolation">Restricción entre Namespaces (Test/Prod)</a></li>
-        <li><a href="#gateway-namespace-policies">Políticas entre Namespaces con Gateway API e Istio</a></li>
-        <li><a href="#dns-failover">Failover con DNSPolicy y Route 53</a></li>
+        <li><a href="#namespace-isolation">Namespace Restriction (Test/Prod)</a></li>
+        <li><a href="#gateway-namespace-policies">Cross-Namespace Policies with Gateway API &amp; Istio</a></li>
+        <li><a href="#dns-failover">Failover with DNSPolicy &amp; Route 53</a></li>
       </ul>
     </li>
-    <li><a href="#gitops">GitOps Multi-Cluster con ACM</a></li>
+    <li><a href="#gitops">Multi-Cluster GitOps with ACM</a></li>
     <li><a href="#developer-hub">Red Hat Developer Hub (Kuadrant Plugin)</a></li>
-    <li><a href="#observabilidad">Observabilidad</a></li>
-    <li><a href="#capturas">Capturas de Pantalla</a></li>
+    <li><a href="#observability">Observability</a></li>
+    <li><a href="#screenshots">Screenshots</a></li>
     <li><a href="#canary">Canary / Blue-Green Deployments</a></li>
-    <li><a href="#pruebas">Plan de Pruebas y Validación (QA)</a></li>
-    <li><a href="#api-reference">Referencia de API</a></li>
+    <li><a href="#testing">Test Plan &amp; Validation (QA)</a></li>
+    <li><a href="#api-reference">API Reference</a></li>
     <li><a href="#troubleshooting">Troubleshooting</a></li>
-    <li><a href="#artifact-hub">Publicar en Artifact Hub</a></li>
+    <li><a href="#artifact-hub">Publish to Artifact Hub</a></li>
   </ol>
 </div>
 
 ---
 
-# 1. Resumen Ejecutivo {#resumen-ejecutivo}
+# 1. Executive Summary {#executive-summary}
 
 [![High Level Architecture]({{ '/images/high-level-architecture.png' | relative_url }})]({{ '/images/high-level-architecture.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Arquitectura de alto nivel del ecosistema NFL Wallet.</span>
+<span class="img-caption">High-level architecture of the Stadium Wallet ecosystem.</span>
 
-Este documento proporciona la guía definitiva para el despliegue, configuración y validación del ecosistema **NFL Stadium Wallet**. La plataforma adopta un enfoque moderno basado en **GitOps**, seguridad **Zero-Trust** sin sidecars mediante **OSSM3 (Ambient Mode)**, y una gestión integral del ciclo de vida de las APIs a través de **Kuadrant** y **Red Hat Developer Hub**.
+This document provides the definitive guide for deploying, configuring, and validating the **Stadium Wallet** ecosystem. The platform adopts a modern approach based on **GitOps**, **Zero-Trust** security without sidecars via **OSSM3 (Ambient Mode)**, and comprehensive API lifecycle management through **Kuadrant** and **Red Hat Developer Hub**.
 
-El sistema se compone de un **frontend interactivo** (Vue.js) y **tres microservicios core** (.NET 8):
+The system is composed of an **interactive frontend** (Vue.js) and **three core microservices** (.NET 8):
 
-| Microservicio | Función |
-|---------------|---------|
-| **api-customers** | Gestión centralizada de identidad y perfiles de clientes |
-| **api-bills** | Lógica transaccional para el venue de Buffalo Bills |
-| **api-raiders** | Lógica transaccional para el venue de Las Vegas Raiders |
+| Microservice | Function |
+|--------------|----------|
+| **api-customers** | Centralized identity and customer profile management |
+| **api-bills** | Transactional logic for the Buffalo Bills venue |
+| **api-raiders** | Transactional logic for the Las Vegas Raiders venue |
 
-Los microservicios interactúan con fuentes de datos externas (**API de ESPN**) de forma segura y auditable para obtener datos deportivos en tiempo real.
+The microservices interact with external data sources (**ESPN API**) securely and auditably to obtain real-time sports data.
 
 <div class="section-cards">
   <div class="section-card">
     <span class="card-icon">&#9881;</span>
-    <h4>GitOps Declarativo</h4>
-    <p>Sincronización continua con OpenShift GitOps (ArgoCD) — todo el estado se define en Git.</p>
+    <h4>Declarative GitOps</h4>
+    <p>Continuous synchronization with OpenShift GitOps (ArgoCD) — all state is defined in Git.</p>
   </div>
   <div class="section-card">
     <span class="card-icon">&#128274;</span>
-    <h4>Zero-Trust sin Sidecars</h4>
-    <p>OSSM3 Ambient Mode: mTLS automático, sin inyección de contenedores sidecar.</p>
+    <h4>Zero-Trust without Sidecars</h4>
+    <p>OSSM3 Ambient Mode: automatic mTLS without sidecar container injection.</p>
   </div>
   <div class="section-card">
     <span class="card-icon">&#128200;</span>
-    <h4>Observabilidad Completa</h4>
-    <p>Grafana, Prometheus, Kiali, TempoStack y OpenTelemetry para visibilidad total.</p>
+    <h4>Complete Observability</h4>
+    <p>Grafana, Prometheus, Kiali, TempoStack and OpenTelemetry for full visibility.</p>
   </div>
   <div class="section-card">
     <span class="card-icon">&#127758;</span>
-    <h4>Multi-Cluster Federado</h4>
-    <p>Topología Hub-and-Spoke con ACM, desplegado en clústeres East y West.</p>
+    <h4>Federated Multi-Cluster</h4>
+    <p>Hub-and-Spoke topology with ACM, deployed across East and West clusters.</p>
   </div>
 </div>
 
-### Recursos Relacionados
+### Related Resources
 
-| Recurso | Descripción |
-|---------|-------------|
-| [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) | Artículo en Red Hat Developer: arquitectura Zero Trust con OIDC/Keycloak y NeuralBank |
-| [Red Hat Connectivity Link — Documentación v1.2](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.2) | Documentación oficial del producto |
-| [Red Hat Connectivity Link — Producto](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) | Página de producto con overview y casos de uso |
-| [Kuadrant — Documentación](https://docs.kuadrant.io/) | Documentación del proyecto upstream (AuthPolicy, RateLimitPolicy, DNSPolicy) |
-| [Kuadrant — Proyecto](https://kuadrant.io/) | Sitio del proyecto open source |
-| [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift) | Guía de inicio rápido en Red Hat Developer |
-| [OSSM3 Ambient Mode — Multi-Cluster Demo](https://github.com/panchoraposo/ossm3-ambient-mode) | Repo de Francisco Raposo: Ansible playbooks para OSSM3, Bookinfo y observabilidad multi-cluster |
+| Resource | Description |
+|----------|-------------|
+| [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) | Red Hat Developer article: Zero Trust architecture with OIDC/Keycloak and NeuralBank |
+| [Red Hat Connectivity Link — Documentation v1.2](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.2) | Official product documentation |
+| [Red Hat Connectivity Link — Product](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) | Product page with overview and use cases |
+| [Kuadrant — Documentation](https://docs.kuadrant.io/) | Upstream project docs (AuthPolicy, RateLimitPolicy, DNSPolicy) |
+| [Kuadrant — Project](https://kuadrant.io/) | Open source project site |
+| [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift) | Quick start guide on Red Hat Developer |
+| [OSSM3 Ambient Mode — Multi-Cluster Demo](https://github.com/panchoraposo/ossm3-ambient-mode) | Francisco Raposo's repo: Ansible playbooks for OSSM3, Bookinfo and multi-cluster observability |
 
 ---
 
-# 2. Arquitectura y Flujos de Datos {#arquitectura}
+# 2. Architecture & Data Flows {#architecture}
 
-## 2.1 Arquitectura de Tres Capas
+## 2.1 Three-Tier Architecture
 
-La solución se estructura en un modelo moderno de tres capas:
+The solution is structured in a modern three-tier model:
 
-| Capa | Componente | Stack Tecnológico | Función | Escalabilidad |
-|------|------------|-------------------|---------|---------------|
-| **Frontend** | webapp (SPA) | Vue 3, Vite, vue-router, Apache (UBI8 httpd-24) | UI para login, consulta de saldos y generación de QR para pagos | Stateless — HPA de OpenShift |
-| **Backend API** | 3 Microservicios independientes | .NET 8.0 ASP.NET Core | ApiCustomers (identidad), ApiWalletBuffaloBills (transacciones Bills), ApiWalletLasVegasRaiders (transacciones Raiders) | Independientemente desplegables y escalables |
-| **Datos** | Almacenamiento persistente | SQLite (customers.db, buffalobills.db, lasvegasraiders.db) | Persistencia local por cada API | Aislamiento estricto de datos |
+| Tier | Component | Technology Stack | Function | Scalability |
+|------|-----------|-----------------|----------|-------------|
+| **Frontend** | webapp (SPA) | Vue 3, Vite, vue-router, Apache (UBI8 httpd-24) | UI for login, balance inquiries and QR code generation for payments | Stateless — OpenShift HPA |
+| **Backend API** | 3 Independent Microservices | .NET 8.0 ASP.NET Core | ApiCustomers (identity), ApiWalletBuffaloBills (Bills transactions), ApiWalletLasVegasRaiders (Raiders transactions) | Independently deployable and scalable |
+| **Data** | Persistent Storage | SQLite (customers.db, buffalobills.db, lasvegasraiders.db) | Local persistence per API | Strict data isolation |
 
-> **Nota de producción:** Para despliegues productivos completos, las bases de datos SQLite deberían migrarse a soluciones de alta disponibilidad como PostgreSQL sobre OpenShift, potencialmente usando el operador Crunchy Data.
+> **Production Note:** For full production deployments, SQLite databases should be migrated to high-availability solutions such as PostgreSQL on OpenShift, potentially using the Crunchy Data operator.
 
-## 2.2 Diagrama de Arquitectura de Red y Service Mesh
+## 2.2 Network Architecture & Service Mesh Diagram
 
 ```mermaid
 graph TD
-    subgraph Plano_de_Gestión["Plano de Gestión"]
+    subgraph Management_Plane["Management Plane"]
         DevHub["Red Hat Developer Hub<br/>API Portal"]
-        Argo["OpenShift GitOps<br/>Sincronización Continua"]
+        Argo["OpenShift GitOps<br/>Continuous Sync"]
     end
 
     subgraph Cluster["OpenShift Cluster — Namespace: nfl-wallet"]
@@ -140,17 +140,17 @@ graph TD
         end
     end
 
-    subgraph Externos["Servicios Externos"]
-        ESPN["API Pública de ESPN<br/>Scoreboards & Stats"]
+    subgraph External["External Services"]
+        ESPN["ESPN Public API<br/>Scoreboards & Stats"]
     end
 
-    User((Usuario Final)) --> GW
-    Dev((Desarrollador)) --> DevHub
-    Argo -- "Aplica Manifiestos" --> Cluster
+    User((End User)) --> GW
+    Dev((Developer)) --> DevHub
+    Argo -- "Applies Manifests" --> Cluster
 
     GW --> Z
     Z <--> UI
-    UI -- "Llamadas API" --> Z
+    UI -- "API Calls" --> Z
     Z <--> WP
     WP --> CAPI
     WP --> BAPI
@@ -160,19 +160,19 @@ graph TD
     BAPI -- "Egress Traffic" --> ESPN
 ```
 
-## 2.3 Topología Multi-Cluster y Federación
+## 2.3 Multi-Cluster Topology & Federation
 
-El sistema utiliza un modelo **Hub-and-Spoke**, gobernado por las herramientas de plataforma y gestión de Red Hat:
+The system utilizes a **Hub-and-Spoke** model, governed by Red Hat platform and management tools:
 
-- **Hub Cluster (Control Plane):** Red Hat Advanced Cluster Management (ACM), OpenShift GitOps (ArgoCD), Hub de Observabilidad centralizado (Prometheus, Grafana, Kiali).
-- **Data Clusters East/West (Spoke):** Cargas de trabajo de la aplicación, OSSM3 en Ambient Mode, federación mediante HBONE (HTTP/2-Based Encryption).
+- **Hub Cluster (Control Plane):** Red Hat Advanced Cluster Management (ACM), OpenShift GitOps (ArgoCD), Centralized Observability Hub (Prometheus, Grafana, Kiali).
+- **Data Clusters East/West (Spoke):** Application workloads, OSSM3 in Ambient Mode, federation via HBONE (HTTP/2-Based Encryption).
 
 ```mermaid
 graph TD
     subgraph Hub["Hub — OpenShift GitOps + ACM"]
         ACM_YAML["app-nfl-wallet-acm.yaml"]
         Placement["Placement<br/>nfl-wallet-gitops-placement"]
-        GitOps["GitOpsCluster<br/>crea secrets east/west"]
+        GitOps["GitOpsCluster<br/>creates east/west secrets"]
         ACM_Decision["app-nfl-wallet-acm-cluster-decision.yaml"]
         AppSet["ApplicationSet — matrix<br/>clusterDecisionResource × list: dev, test, prod"]
         Apps["Applications:<br/>nfl-wallet-namespace-clusterName"]
@@ -199,16 +199,16 @@ graph TD
     Apps --> West
 ```
 
-## 2.4 Integración con API ESPN
+## 2.4 ESPN API Integration
 
-Los microservicios `api-bills` y `api-raiders` requieren datos deportivos en tiempo real.
+The `api-bills` and `api-raiders` microservices require real-time sports data.
 
 - **Endpoint:** `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard`
-- **Gestión de Egress:** OSSM3 Ambient Mode intercepta las peticiones HTTP salientes mediante el ztunnel del nodo, permitiendo monitorizar latencias y aplicar políticas de salida sin la penalización de rendimiento de inyectar contenedores sidecar.
+- **Egress Management:** OSSM3 Ambient Mode intercepts outbound HTTP requests via the node's ztunnel, enabling latency monitoring and egress policy enforcement without the performance penalty of sidecar container injection.
 
 ---
 
-# 3. Stack Tecnológico {#stack-tecnológico}
+# 3. Technology Stack {#technology-stack}
 
 <div class="tech-badges">
   <img src="https://img.shields.io/badge/OpenShift-EE0000?style=for-the-badge&logo=redhatopenshift&logoColor=white" alt="OpenShift">
@@ -221,104 +221,104 @@ Los microservicios `api-bills` y `api-raiders` requieren datos deportivos en tie
   <img src="https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white" alt="Prometheus">
 </div>
 
-| Componente | Tecnología | Propósito |
-|------------|------------|-----------|
-| **Frontend** | Vue 3, Vite, vue-router | SPA servida por Apache (UBI8) |
-| **Backend** | .NET 8.0 ASP.NET Core (x3) | Microservicios: Customers, Bills, Raiders |
-| **Datos** | SQLite | Una base de datos por API |
-| **Contenedores** | Podman / OpenShift | Build e imágenes en Quay.io |
-| **Orquestación** | OpenShift 4.20+, Kubernetes | Plataforma de contenedores |
-| **GitOps** | OpenShift GitOps (ArgoCD) | Sincronización declarativa |
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| **Frontend** | Vue 3, Vite, vue-router | SPA served by Apache (UBI8) |
+| **Backend** | .NET 8.0 ASP.NET Core (x3) | Microservices: Customers, Bills, Raiders |
+| **Data** | SQLite | One database per API |
+| **Containers** | Podman / OpenShift | Build and images on Quay.io |
+| **Orchestration** | OpenShift 4.20+, Kubernetes | Container platform |
+| **GitOps** | OpenShift GitOps (ArgoCD) | Declarative synchronization |
 | **Service Mesh** | OSSM 3.2 (Sail Operator, Ambient Mode) | Zero-Trust, mTLS, L7 routing |
 | **Gateway** | Gateway API, Kuadrant | Ingress, Rate Limiting, Auth |
-| **Observabilidad** | Prometheus, Grafana, Kiali, TempoStack, OpenTelemetry | Métricas, trazas, topología |
-| **Multi-Cluster** | ACM (Advanced Cluster Management) | Hub-and-Spoke, federación |
-| **Developer Portal** | Red Hat Developer Hub (RHDH) | Catálogo de APIs, autoservicio |
+| **Observability** | Prometheus, Grafana, Kiali, TempoStack, OpenTelemetry | Metrics, traces, topology |
+| **Multi-Cluster** | ACM (Advanced Cluster Management) | Hub-and-Spoke, federation |
+| **Developer Portal** | Red Hat Developer Hub (RHDH) | API catalog, self-service |
 
 ---
 
-# 4. Prerrequisitos de Infraestructura {#prerrequisitos}
+# 4. Infrastructure Prerequisites {#prerequisites}
 
-## 4.1 Requisitos del Clúster
+## 4.1 Cluster Requirements
 
-| Requisito | Detalle | Justificación |
-|-----------|---------|---------------|
-| **OpenShift Container Platform** | Versión 4.20 o superior, con privilegios cluster-admin | Compatibilidad con OSSM 3.2 y las últimas políticas de Kuadrant |
-| **Topología** | Mínimo tres clústeres: Hub (ACM/GitOps), East (Workloads), West (Workloads) | Validar la federación multi-cluster |
-| **SNO (Single Node OpenShift)** | Si se usa para PoC, aumentar `maxPods` (recomendado: 500 mínimo) | Soportar la carga del Service Mesh y Kuadrant |
+| Requirement | Details | Rationale |
+|-------------|---------|-----------|
+| **OpenShift Container Platform** | Version 4.20 or newer, with cluster-admin privileges | Ensures compatibility with OSSM 3.2 and latest Kuadrant policies |
+| **Topology** | Minimum of three distinct clusters: Hub (ACM/GitOps), East (Workloads), West (Workloads) | Essential for validating multi-cluster federation and resilience |
+| **SNO (Single Node OpenShift)** | When deploying on SNO for PoC, increase `maxPods` (recommended minimum: 500) | Accommodates Service Mesh and Kuadrant control plane demands |
 
-## 4.2 Operadores Requeridos
+## 4.2 Required Operators
 
-Los siguientes operadores deben estar instalados y configurados por el administrador (Cluster Admin):
+The following operators must be installed and configured by the Cluster Admin:
 
-1. **OpenShift GitOps** — Sincronización declarativa del repositorio
-2. **OpenShift Service Mesh 3 (Sail Operator)** — Plano de control de Istio Ambient Mode
-3. **Gateway API Operator** — Enrutamiento y exposición de servicios
-4. **Kuadrant Operator** — Rate Limiting y Auth Policies
-5. **Red Hat Developer Hub (RHDH)** — Portal de APIs con plugin de Kuadrant
+1. **OpenShift GitOps** — Declarative repository synchronization
+2. **OpenShift Service Mesh 3 (Sail Operator)** — Istio Ambient Mode control plane
+3. **Gateway API Operator** — Service routing and exposure
+4. **Kuadrant Operator** — Rate Limiting and Auth Policies
+5. **Red Hat Developer Hub (RHDH)** — API portal with Kuadrant plugin
 
-## 4.3 Herramientas Locales
+## 4.3 Local Tooling
 
-| Herramienta | Uso |
-|-------------|-----|
-| `oc` CLI | Login en los tres contextos de clúster |
-| .NET 8.0 SDK + Node.js 20 | Desarrollo local y validación pre-deploy |
-| Podman | Build, gestión y testing local de imágenes UBI8 |
-| Ansible | Ejecución de playbooks de inicialización multi-cluster |
-| Helm 3 | Despliegue del chart `nfl-wallet` |
+| Tool | Usage |
+|------|-------|
+| `oc` CLI | Login to all three cluster contexts |
+| .NET 8.0 SDK + Node.js 20 | Local development and pre-deployment validation |
+| Podman | Building, managing and local testing of UBI8 container images |
+| Ansible | Multi-cluster initialization playbook execution |
+| Helm 3 | `nfl-wallet` chart deployment |
 
 ---
 
-# 5. Guía de Instalación GitOps {#despliegue}
+# 5. GitOps Installation Guide {#deployment}
 
-### Por qué GitOps
+### Why GitOps
 
-NFL Wallet adopta GitOps como modelo de despliegue porque resuelve problemas fundamentales de la operación de plataformas:
+Stadium Wallet adopts GitOps as its deployment model because it solves fundamental problems in platform operations:
 
-- **Reproducibilidad:** El estado completo del clúster está declarado en Git. Cualquier ambiente (dev, test, prod) se puede recrear desde cero aplicando los mismos manifiestos
-- **Auditabilidad:** Cada cambio en la infraestructura tiene un commit con autor, fecha y mensaje. No hay "cambios a mano" que se pierden — Git es la fuente de verdad
-- **Drift detection:** ArgoCD compara continuamente el estado deseado (Git) contra el estado real (clúster) y alerta o autocorrige desviaciones
-- **Rollback declarativo:** Revertir un despliegue problemático es un `git revert` — ArgoCD reconcilia automáticamente al estado anterior
+- **Reproducibility:** The complete cluster state is declared in Git. Any environment (dev, test, prod) can be recreated from scratch by applying the same manifests
+- **Auditability:** Every infrastructure change has a commit with author, date, and message. No more "manual changes" that get lost — Git is the source of truth
+- **Drift detection:** ArgoCD continuously compares the desired state (Git) against the actual state (cluster) and alerts or auto-corrects deviations
+- **Declarative rollback:** Reverting a problematic deployment is a `git revert` — ArgoCD automatically reconciles to the previous state
 
 > *"Rather than manually configuring each component, you define the desired state in code, and GitOps ensures that state is achieved and maintained."* — [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link)
 
-La instalación se realiza de forma **declarativa** mediante OpenShift GitOps (ArgoCD), no mediante comandos imperativos.
+Installation is performed **declaratively** via OpenShift GitOps (ArgoCD), not through imperative commands.
 
-## 5.1 Ejecución Local con Podman Compose
+## 5.1 Local Execution with Podman Compose
 
-Para desarrollo local, el stack completo se ejecuta con **Podman Compose**:
+For local development, the full stack runs with **Podman Compose**:
 
 ```bash
-# Desde la raíz del repositorio
+# From the repo root
 podman-compose up -d --build
 
-# Acceder a la aplicación
+# Access the application
 # http://localhost:5160
 ```
 
-Servicios locales:
-- **api-customers** — Puerto 5001
-- **api-buffalo-bills** — Puerto 5002
-- **api-las-vegas-raiders** — Puerto 5003
-- **webapp** — Puerto 5160
+Local services:
+- **api-customers** — Port 5001
+- **api-buffalo-bills** — Port 5002
+- **api-las-vegas-raiders** — Port 5003
+- **webapp** — Port 5160
 
 [![Podman Compose]({{ '/images/podman.png' | relative_url }})]({{ '/images/podman.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Ejecución del stack con Podman Compose: webapp y tres APIs en contenedores locales.</span>
+<span class="img-caption">Running the stack with Podman Compose: webapp and three APIs in local containers.</span>
 
-## 5.2 Desarrollo con Red Hat OpenShift Dev Spaces
+## 5.2 Development with Red Hat OpenShift Dev Spaces
 
-El repositorio incluye un **devfile.yaml** para Red Hat OpenShift Dev Spaces, permitiendo desarrollar y testear en un IDE cloud sin instalar .NET ni Node.js localmente.
+The repository includes a **devfile.yaml** for Red Hat OpenShift Dev Spaces, enabling development and testing in a cloud IDE without installing .NET or Node.js locally.
 
 [![OpenShift Dev Spaces]({{ '/images/devspaces.png' | relative_url }})]({{ '/images/devspaces.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Workspace de OpenShift Dev Spaces con el proyecto NFL-Wallet.</span>
+<span class="img-caption">OpenShift Dev Spaces workspace with the Stadium Wallet project.</span>
 
 [![Dev Spaces Build]({{ '/images/devspaces2.png' | relative_url }})]({{ '/images/devspaces2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Build y ejecución en Dev Spaces: compilar e iniciar la webapp y las APIs desde el workspace.</span>
+<span class="img-caption">Build and run in Dev Spaces: compile and start the webapp and APIs from the workspace.</span>
 
 [![Dev Spaces App]({{ '/images/devspaces3.png' | relative_url }})]({{ '/images/devspaces3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Aplicación ejecutándose desde Dev Spaces: frontend y APIs servidos desde la nube.</span>
+<span class="img-caption">App running from Dev Spaces: frontend and APIs served from the cloud workspace.</span>
 
-## 5.3 Despliegue con Helm Chart
+## 5.3 Helm Chart Deployment
 
 ```bash
 kubectl create namespace nfl-wallet
@@ -326,24 +326,24 @@ kubectl create namespace nfl-wallet
 helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet
 ```
 
-### Valores del Chart (Referencia)
+### Chart Values (Reference)
 
-| Clave | Descripción | Default |
-|-------|-------------|---------|
-| `global.imageRegistry` | Registro de imágenes | `quay.io` |
-| `imageNamespace` | Namespace del registro | `maximilianopizarro` |
-| `apiCustomers.service.port` | Puerto del servicio | `8080` |
-| `apiBills.service.port` | Puerto del servicio | `8081` |
-| `apiRaiders.service.port` | Puerto del servicio | `8082` |
-| `webapp.service.port` | Puerto del servicio | `5173` |
-| `webapp.route.enabled` | Crear Route de OpenShift | `true` |
-| `gateway.enabled` | Crear Gateway + HTTPRoutes | `false` |
+| Key | Description | Default |
+|-----|-------------|---------|
+| `global.imageRegistry` | Image registry | `quay.io` |
+| `imageNamespace` | Registry namespace | `maximilianopizarro` |
+| `apiCustomers.service.port` | Service port | `8080` |
+| `apiBills.service.port` | Service port | `8081` |
+| `apiRaiders.service.port` | Service port | `8082` |
+| `webapp.service.port` | Service port | `5173` |
+| `webapp.route.enabled` | Create OpenShift Route | `true` |
+| `gateway.enabled` | Create Gateway + HTTPRoutes | `false` |
 | `gateway.className` | GatewayClass | `istio` |
-| `apiKeys.enabled` | Crear Secret e inyectar API keys | `false` |
-| `authorizationPolicy.enabled` | Istio AuthorizationPolicy para X-API-Key | `false` |
-| `observability.rhobs.enabled` | Recursos RHOBS (ThanosQuerier, PodMonitor, UIPlugin) | `false` |
+| `apiKeys.enabled` | Create Secret and inject API keys | `false` |
+| `authorizationPolicy.enabled` | Istio AuthorizationPolicy for X-API-Key | `false` |
+| `observability.rhobs.enabled` | RHOBS resources (ThanosQuerier, PodMonitor, UIPlugin) | `false` |
 
-## 5.4 Aplicar la Application Root de ArgoCD
+## 5.4 Apply the ArgoCD Root Application
 
 ```yaml
 apiVersion: argoproj.io/v1alpha1
@@ -368,65 +368,65 @@ spec:
       - CreateNamespace=true
 ```
 
-> Una vez aplicado, ArgoCD desplegará los Deployments, Services, HTTPRoutes, y las políticas de Kuadrant de forma ordenada.
+> Once applied, ArgoCD will deploy Deployments, Services, HTTPRoutes, and Kuadrant policies in order.
 
 [![OpenShift Topology]({{ '/images/topology.png' | relative_url }})]({{ '/images/topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Vista de topología en OpenShift: webapp → api-customers, api-bills, api-raiders.</span>
+<span class="img-caption">Topology view in OpenShift: webapp → api-customers, api-bills, api-raiders.</span>
 
 ---
 
 # 6. Service Mesh 3 (Ambient Mode) {#service-mesh}
 
-OpenShift Service Mesh 3 (OSSM3) implementa un modelo de seguridad **Zero Trust** en la capa de red: cada conexión entre servicios se autentica y encripta automáticamente mediante mTLS, independientemente de su origen. El principio es *"nunca confiar, siempre verificar"* — ningún servicio puede comunicarse con otro sin presentar una identidad criptográfica válida emitida por la CA del mesh. Esto elimina la confianza implícita basada en la topología de red y proporciona defensa en profundidad contra movimiento lateral.
+OpenShift Service Mesh 3 (OSSM3) implements a **Zero Trust** security model at the network layer: every connection between services is automatically authenticated and encrypted via mTLS, regardless of its origin. The principle is *"never trust, always verify"* — no service can communicate with another without presenting a valid cryptographic identity issued by the mesh CA. This eliminates implicit trust based on network topology and provides defense in depth against lateral movement.
 
-> **Lectura relacionada:** El artículo [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) profundiza en la integración de Service Mesh con Connectivity Link y Kuadrant para construir una arquitectura Zero Trust completa.
+> **Related reading:** The article [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) dives deeper into integrating Service Mesh with Connectivity Link and Kuadrant to build a complete Zero Trust architecture.
 
-## 6.1 Modelo de Seguridad Zero-Sidecar
+## 6.1 Zero-Sidecar Security Model
 
-OSSM 3.2 en Ambient Mode separa las funciones de seguridad L4 y L7 en componentes especializados:
+OSSM 3.2 in Ambient Mode separates L4 and L7 security functions into specialized components:
 
-| Componente | Capa | Función |
-|------------|------|---------|
-| **ztunnel** | L4 | Seguridad a nivel de nodo: mTLS para todo el tráfico East-West, telemetría L4, encriptación de transporte |
-| **Waypoint Proxy** | L7 | Proxy Envoy dedicado por servicio: telemetría avanzada L7, routing HTTP complejo, control de acceso |
+| Component | Layer | Function |
+|-----------|-------|----------|
+| **ztunnel** | L4 | Node-level security: mTLS for all East-West traffic, L4 telemetry, transport encryption |
+| **Waypoint Proxy** | L7 | Dedicated per-service Envoy proxy: advanced L7 telemetry, complex HTTP routing, access control |
 
-Los Waypoints se despliegan estratégicamente para `api-customers`, `api-bills` y `api-raiders` sin inyectar sidecars en los pods.
+Waypoints are strategically deployed for `api-customers`, `api-bills`, and `api-raiders` without injecting sidecars into the application pods.
 
-### Sidecar tradicional vs. Ambient Mode
+### Traditional Sidecar vs. Ambient Mode
 
-En el modelo **sidecar tradicional**, cada pod recibe un contenedor `istio-proxy` inyectado automáticamente. Esto implica duplicar el consumo de memoria y CPU por cada workload, incrementar la latencia de startup, y complicar el debugging (cada pod tiene 2+ contenedores).
+In the **traditional sidecar model**, each pod receives an automatically injected `istio-proxy` container. This doubles memory and CPU consumption per workload, increases startup latency, and complicates debugging (each pod has 2+ containers).
 
-**Ambient Mode** elimina esta complejidad separando las responsabilidades:
+**Ambient Mode** eliminates this complexity by separating responsibilities:
 
-| Aspecto | Sidecar | Ambient |
-|---------|---------|---------|
-| mTLS | Proxy por pod | ztunnel por nodo (DaemonSet) |
-| Contenedores por pod | 2+ (app + sidecar) | 1 (solo app) |
-| Overhead de memoria | ~50-100 MB por sidecar | Compartido por nodo |
-| Políticas L7 | Sidecar Envoy | Waypoint Proxy (opcional, por servicio) |
-| Complejidad operativa | Alta (inyección, disruptions en rollouts) | Baja (sin inyección, sin disruptions) |
+| Aspect | Sidecar | Ambient |
+|--------|---------|---------|
+| mTLS | Proxy per pod | ztunnel per node (DaemonSet) |
+| Containers per pod | 2+ (app + sidecar) | 1 (app only) |
+| Memory overhead | ~50-100 MB per sidecar | Shared per node |
+| L7 policies | Sidecar Envoy | Waypoint Proxy (optional, per service) |
+| Operational complexity | High (injection, rollout disruptions) | Low (no injection, no disruptions) |
 
-El resultado es la **misma seguridad mTLS** con menor overhead de recursos y menor complejidad operativa.
+The result is the **same mTLS security** with lower resource overhead and reduced operational complexity.
 
-### Impacto real en recursos
+### Real Resource Impact
 
-Los datos publicados por la comunidad Istio muestran el ahorro concreto que Ambient Mode aporta a escala:
+Data published by the Istio community shows the concrete savings that Ambient Mode delivers at scale:
 
 > *"Ambient mode's shared ztunnel uses about 1 GB of memory for 300 pods on 10 nodes. By contrast, sidecar mode deploys a proxy per pod, consuming approximately 21 GB of memory for the same 300 pods."*
 
-Esto representa una **reducción de ~95 % en consumo de memoria** dedicada al mesh. Además, como ztunnel opera como DaemonSet (un proceso por nodo), el overhead no crece con el número de pods sino con el de nodos, haciendo Ambient Mode particularmente eficiente para plataformas con alta densidad de microservicios.
+This represents a **~95% reduction in memory consumption** dedicated to the mesh. Additionally, since ztunnel operates as a DaemonSet (one process per node), overhead scales with the number of nodes rather than pods, making Ambient Mode particularly efficient for platforms with high microservice density.
 
-| Métrica | Sidecar (300 pods / 10 nodos) | Ambient (300 pods / 10 nodos) |
-|---------|-------------------------------|-------------------------------|
-| Memoria del mesh | ~21 GB | ~1 GB |
-| Proxies desplegados | 300 (uno por pod) | 10 ztunnels + waypoints selectivos |
-| Startup latency adicional | Sí (inyección de sidecar) | No |
+| Metric | Sidecar (300 pods / 10 nodes) | Ambient (300 pods / 10 nodes) |
+|--------|-------------------------------|-------------------------------|
+| Mesh memory | ~21 GB | ~1 GB |
+| Proxies deployed | 300 (one per pod) | 10 ztunnels + selective waypoints |
+| Additional startup latency | Yes (sidecar injection) | No |
 
-> **Fuente:** [Istio — Ambient Mode Overview](https://istio.io/latest/docs/overview/dataplane-modes/) · *"Start with L4 security and selectively add L7 features only to services that need them."*
+> **Source:** [Istio — Ambient Mode Overview](https://istio.io/latest/docs/overview/dataplane-modes/) · *"Start with L4 security and selectively add L7 features only to services that need them."*
 
-## 6.2 Enrolamiento en Ambient Mode
+## 6.2 Ambient Mode Enrollment
 
-El namespace se inscribe en la malla mediante una etiqueta, aplicada automáticamente por ArgoCD:
+The namespace enrolls in the mesh via a label, automatically applied by ArgoCD:
 
 ```yaml
 apiVersion: v1
@@ -437,35 +437,35 @@ metadata:
     istio.io/dataplane-mode: ambient
 ```
 
-**Validación:** Los pods de la aplicación NO tienen el contenedor `istio-proxy`, pero el tráfico se encripta mediante mTLS gestionado por el DaemonSet ztunnel.
+**Validation:** Application pods do NOT have the `istio-proxy` container, but traffic is encrypted via mTLS managed by the ztunnel DaemonSet.
 
-Verificar que ztunnel está interceptando el tráfico del namespace:
+Verify that ztunnel is intercepting namespace traffic:
 
 ```bash
-# Confirmar que los pods NO tienen sidecar (1/1 containers)
+# Confirm pods do NOT have sidecar (1/1 containers)
 oc get pods -n nfl-wallet -o custom-columns=NAME:.metadata.name,CONTAINERS:.spec.containers[*].name,READY:.status.containerStatuses[*].ready
 
-# Verificar que ztunnel está activo y procesando tráfico
+# Verify ztunnel is active and processing traffic
 oc logs -n ztunnel -l app=ztunnel --tail=20 | grep "nfl-wallet"
 
-# Confirmar identidad SPIFFE asignada a los workloads
+# Confirm SPIFFE identity assigned to workloads
 oc exec -n ztunnel $(oc get pod -n ztunnel -l app=ztunnel -o name | head -1) -- curl -s localhost:15000/config_dump | grep "nfl-wallet"
 ```
 
 ## 6.3 Waypoint Proxy
 
-El Waypoint Proxy se despliega solo cuando se requieren políticas L7 (HTTP routing, AuthPolicy, telemetría avanzada). Si un servicio solo necesita mTLS (L4), **ztunnel es suficiente** y no se requiere Waypoint — esto reduce el consumo de recursos.
+The Waypoint Proxy is deployed only when L7 policies are required (HTTP routing, AuthPolicy, advanced telemetry). If a service only needs mTLS (L4), **ztunnel is sufficient** and no Waypoint is needed — this reduces resource consumption.
 
-**Cuándo usar cada componente:**
+**When to use each component:**
 
-| Necesidad | Componente | Ejemplo en NFL Wallet |
-|-----------|------------|----------------------|
-| mTLS + telemetría básica | ztunnel (L4) | Comunicación webapp ↔ apis |
-| AuthPolicy / RateLimitPolicy | Waypoint (L7) | Validación de API Key en api-customers |
-| Routing HTTP avanzado | Waypoint (L7) | URL rewrite en HTTPRoutes |
-| Trazas distribuidas (spans L7) | Waypoint (L7) | Spans en Jaeger/Tempo |
+| Need | Component | Stadium Wallet Example |
+|------|-----------|-------------------|
+| mTLS + basic telemetry | ztunnel (L4) | webapp ↔ apis communication |
+| AuthPolicy / RateLimitPolicy | Waypoint (L7) | API Key validation on api-customers |
+| Advanced HTTP routing | Waypoint (L7) | URL rewrite in HTTPRoutes |
+| Distributed traces (L7 spans) | Waypoint (L7) | Spans in Jaeger/Tempo |
 
-El Waypoint se integra nativamente con las políticas de [Kuadrant](https://docs.kuadrant.io/): cuando una AuthPolicy o RateLimitPolicy referencia un HTTPRoute, el Waypoint es el componente que ejecuta la validación L7 en coordinación con Authorino y Limitador.
+The Waypoint integrates natively with [Kuadrant](https://docs.kuadrant.io/) policies: when an AuthPolicy or RateLimitPolicy references an HTTPRoute, the Waypoint executes L7 validation in coordination with Authorino and Limitador.
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -483,57 +483,57 @@ spec:
     protocol: HBONE
 ```
 
-## 6.4 Federación y Trust
+## 6.4 Federation & Trust
 
-La federación multi-cluster establece un dominio de confianza unificado entre los clústeres East y West. El proceso se basa en tres pilares:
+Multi-cluster federation establishes a unified trust domain between East and West clusters. The process is based on three pillars:
 
-- **Shared Root CA:** Una CA raíz compartida entre todos los Data Clusters (East/West). Cada clúster genera certificados intermedios desde esta CA, permitiendo que las identidades SPIFFE (`spiffe://cluster.local/ns/nfl-wallet/sa/api-customers`) sean reconocidas por ambos clústeres
-- **meshNetworks:** Configuración de reachabilidad cross-cluster que define qué redes son alcanzables y a través de qué gateways
-- **East-West HBONE Gateways:** Transporte L4 seguro mediante HBONE para descubrimiento y comunicación entre regiones. El protocolo HBONE encapsula tráfico mTLS sobre HTTP/2 CONNECT, atravesando firewalls y load balancers sin requerir puertos adicionales
+- **Shared Root CA:** A single Root CA securely distributed and trusted by all Data Clusters (East/West). Each cluster generates intermediate certificates from this CA, allowing SPIFFE identities (`spiffe://cluster.local/ns/nfl-wallet/sa/api-customers`) to be recognized by both clusters
+- **meshNetworks:** Configuration objects defining cross-cluster network reachability and which gateways to use for reaching remote networks
+- **East-West HBONE Gateways:** Secure L4 transport via HBONE for multi-primary service discovery and encrypted cross-region communication. The HBONE protocol encapsulates mTLS traffic over HTTP/2 CONNECT, traversing firewalls and load balancers without requiring additional ports
 
-> **Referencia:** El repo [ossm3-ambient-mode](https://github.com/panchoraposo/ossm3-ambient-mode) contiene los scripts de Ansible para automatizar la generación de la CA compartida, el intercambio de remote secrets y la configuración de meshNetworks entre clústeres.
+> **Reference:** The [ossm3-ambient-mode](https://github.com/panchoraposo/ossm3-ambient-mode) repo contains Ansible scripts to automate shared CA generation, remote secret exchange, and meshNetworks configuration between clusters.
 
 ---
 
-# 7. Connectivity Link y Gateway API {#connectivity-link}
+# 7. Connectivity Link & Gateway API {#connectivity-link}
 
-[Red Hat Connectivity Link](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) es un framework Kubernetes-native que unifica **Gateway API**, **gestión de políticas** (autenticación, rate limiting) y **DNS** en una experiencia declarativa. Basado en el proyecto upstream [Kuadrant](https://kuadrant.io/), Connectivity Link permite definir políticas de conectividad como CRDs que se aplican automáticamente al Gateway, eliminando la necesidad de configurar proxies, rate limiters y auth servers de forma manual.
+[Red Hat Connectivity Link](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) is a Kubernetes-native framework that unifies **Gateway API**, **policy management** (authentication, rate limiting), and **DNS** into a declarative experience. Based on the upstream [Kuadrant](https://kuadrant.io/) project, Connectivity Link allows defining connectivity policies as CRDs that are automatically applied to the Gateway, eliminating the need to manually configure proxies, rate limiters, and auth servers.
 
-En el contexto de NFL Wallet, Connectivity Link orquesta:
-- **Ingress** via Kubernetes Gateway API (reemplazando OpenShift Routes tradicionales)
-- **Rate Limiting** via RateLimitPolicy + [Limitador](https://docs.kuadrant.io/) (motor de cuotas escrito en Rust)
-- **Autenticación** via AuthPolicy + [Authorino](https://docs.kuadrant.io/latest/authorino/docs/getting-started/) (validación de API Keys)
-- **DNS** via DNSPolicy para failover multi-cluster con Route 53
+In the context of Stadium Wallet, Connectivity Link orchestrates:
+- **Ingress** via Kubernetes Gateway API (replacing traditional OpenShift Routes)
+- **Rate Limiting** via RateLimitPolicy + [Limitador](https://docs.kuadrant.io/) (quota engine written in Rust)
+- **Authentication** via AuthPolicy + [Authorino](https://docs.kuadrant.io/latest/authorino/docs/getting-started/) (API Key validation)
+- **DNS** via DNSPolicy for multi-cluster failover with Route 53
 
-> **Documentación oficial:**
+> **Official documentation:**
 > - [Red Hat Connectivity Link v1.2](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.2)
-> - [Kuadrant — Documentación](https://docs.kuadrant.io/)
+> - [Kuadrant — Documentation](https://docs.kuadrant.io/)
 > - [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift)
 
-### Por qué Gateway API y no Ingress tradicional
+### Why Gateway API Instead of Traditional Ingress
 
-La migración de Ingress a Gateway API no es una decisión estética — es una necesidad operativa con un horizonte concreto:
+Migrating from Ingress to Gateway API is not an aesthetic choice — it is an operational necessity with a concrete timeline:
 
-- **Ingress NGINX alcanza fin de soporte en marzo 2026.** Los proyectos que dependan de este controlador deberán migrar a alternativas activamente mantenidas. Gateway API es la recomendación oficial del proyecto Kubernetes.
-- **Gateway API alcanzó GA en octubre 2023** (v1.0) y ya es soportada por todos los controladores principales: Istio, Envoy Gateway, HAProxy, Traefik, NGINX Gateway Fabric y Cilium.
-- **Las annotations vendor-specific de Ingress** (como `nginx.ingress.kubernetes.io/*`) generan lock-in al controlador. Gateway API usa CRDs tipados con validación en esquema — no hay magic annotations.
+- **Ingress NGINX reaches end of support in March 2026.** Projects depending on this controller will need to migrate to actively maintained alternatives. Gateway API is the official Kubernetes project recommendation.
+- **Gateway API reached GA in October 2023** (v1.0) and is already supported by all major controllers: Istio, Envoy Gateway, HAProxy, Traefik, NGINX Gateway Fabric, and Cilium.
+- **Vendor-specific Ingress annotations** (like `nginx.ingress.kubernetes.io/*`) create controller lock-in. Gateway API uses typed CRDs with schema validation — no magic annotations.
 
 > *"Kuadrant extends Gateway API to add a connectivity management API that makes it easy for platform engineers and application developers to collaborate on connectivity concerns."* — [kuadrant.io](https://kuadrant.io/)
 
-La ventaja fundamental de Gateway API es la **separación de responsabilidades** mediante CRDs formales: el equipo de plataforma controla el `Gateway`, los equipos de desarrollo controlan sus `HTTPRoute`, y las políticas de seguridad se aplican como attachments independientes. Esto elimina la necesidad de coordinar annotations en un único recurso Ingress compartido.
+The fundamental advantage of Gateway API is **separation of concerns** through formal CRDs: the platform team controls the `Gateway`, development teams control their `HTTPRoute`, and security policies are applied as independent attachments. This eliminates the need to coordinate annotations on a single shared Ingress resource.
 
-> **Fuentes:** [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) · [Introducing ingress2gateway](https://kubernetes.io/blog/2023/10/25/introducing-ingress2gateway/) · [Red Hat Connectivity Link — Now GA](https://developers.redhat.com/articles/2025/01/23/red-hat-connectivity-link-now-generally-available)
+> **Sources:** [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) · [Introducing ingress2gateway](https://kubernetes.io/blog/2023/10/25/introducing-ingress2gateway/) · [Red Hat Connectivity Link — Now GA](https://developers.redhat.com/articles/2025/01/23/red-hat-connectivity-link-now-generally-available)
 
-## 7.1 Ingress con HTTPRoute
+## 7.1 Ingress with HTTPRoute
 
-La [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) es el estándar que reemplaza al recurso Ingress tradicional. Su principal ventaja es la **separación de responsabilidades**: el equipo de infraestructura define el recurso `Gateway` (listeners, protocolos, certificados), mientras que los equipos de desarrollo definen sus propios `HTTPRoute` (paths, backends, rewrites). Esta separación se formaliza mediante los CRDs:
+The [Kubernetes Gateway API](https://gateway-api.sigs.k8s.io/) is the standard replacing the traditional Ingress resource. Its main advantage is **separation of concerns**: the infrastructure team defines the `Gateway` resource (listeners, protocols, certificates), while development teams define their own `HTTPRoute` (paths, backends, rewrites). This separation is formalized through CRDs:
 
-| CRD | Responsable | Función |
-|-----|-------------|---------|
-| `GatewayClass` | Proveedor (Istio/Envoy) | Define el controlador que implementa el Gateway |
-| `Gateway` | Platform Engineer | Listeners (puertos, protocolos, TLS), políticas globales |
-| `HTTPRoute` | Developer | Routing por path/header, backends, URL rewrite |
-| `ReferenceGrant` | Platform Engineer | Autoriza referencias cross-namespace |
+| CRD | Responsible | Function |
+|-----|-------------|----------|
+| `GatewayClass` | Provider (Istio/Envoy) | Defines the controller implementing the Gateway |
+| `Gateway` | Platform Engineer | Listeners (ports, protocols, TLS), global policies |
+| `HTTPRoute` | Developer | Path/header routing, backends, URL rewrite |
+| `ReferenceGrant` | Platform Engineer | Authorizes cross-namespace references |
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -553,11 +553,11 @@ spec:
       port: 5173
 ```
 
-Se crean cuatro HTTPRoutes: webapp (`/`), api-customers (`/api-customers`), api-bills (`/api-bills`), api-raiders (`/api-raiders`), con URL rewrite al backend.
+Four HTTPRoutes are created: webapp (`/`), api-customers (`/api-customers`), api-bills (`/api-bills`), api-raiders (`/api-raiders`), with URL rewrite to the backend.
 
-## 7.2 Habilitar Gateway
+## 7.2 Enable Gateway
 
-El Gateway define los listeners que aceptan tráfico externo. En NFL Wallet, el Helm chart crea un Gateway con listener HTTP que es gestionado por el controlador Istio/Envoy de Connectivity Link:
+The Gateway defines listeners that accept external traffic. In Stadium Wallet, the Helm chart creates a Gateway with an HTTP listener managed by the Istio/Envoy controller from Connectivity Link:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -576,7 +576,7 @@ spec:
         from: Same
 ```
 
-Despliegue via Helm:
+Deploy via Helm:
 
 ```bash
 helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
@@ -584,14 +584,14 @@ helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
   --set gateway.className=openshift-gateway
 ```
 
-## 7.3 Rate Limiting con Kuadrant
+## 7.3 Rate Limiting with Kuadrant
 
-Kuadrant implementa rate limiting mediante dos componentes: la **RateLimitPolicy** (CRD declarativo que define las reglas) y **Limitador** (servicio que mantiene los contadores en memoria y evalúa las cuotas). El flujo de enforcement es:
+Kuadrant implements rate limiting through two components: the **RateLimitPolicy** (declarative CRD defining the rules) and **Limitador** (service maintaining in-memory counters and evaluating quotas). The enforcement flow is:
 
-1. Un request llega al **Gateway** (Envoy)
-2. Envoy consulta a **Limitador** con los descriptores definidos en la RateLimitPolicy
-3. Limitador evalúa los contadores (ventana de tiempo + límite) y responde allow/deny
-4. Si el límite se excede, el Gateway retorna **429 Too Many Requests** antes de que el request llegue al backend
+1. A request arrives at the **Gateway** (Envoy)
+2. Envoy queries **Limitador** with descriptors defined in the RateLimitPolicy
+3. Limitador evaluates counters (time window + limit) and responds allow/deny
+4. If the limit is exceeded, the Gateway returns **429 Too Many Requests** before the request reaches the backend
 
 ```yaml
 apiVersion: kuadrant.io/v1beta2
@@ -611,17 +611,17 @@ spec:
         unit: minute
 ```
 
-### Tiers de Rate Limiting
+### Rate Limiting Tiers
 
-NFL Wallet define tres tiers de acceso que se aplican mediante PlanPolicy en combinación con el plugin de Kuadrant en RHDH:
+Stadium Wallet defines three access tiers applied through PlanPolicy in combination with the Kuadrant plugin in RHDH:
 
-| Tier | Límite | Caso de Uso |
-|------|--------|-------------|
-| **Bronze** | 100 req/día | Evaluación y desarrollo |
-| **Silver** | 500 req/día | Aplicaciones en testing |
-| **Gold** | 1000 req/día | Producción |
+| Tier | Limit | Use Case |
+|------|-------|----------|
+| **Bronze** | 100 req/day | Evaluation and development |
+| **Silver** | 500 req/day | Applications in testing |
+| **Gold** | 1000 req/day | Production |
 
-Habilitar Rate Limiting + Auth:
+Enable Rate Limiting + Auth:
 
 ```bash
 helm upgrade nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
@@ -632,34 +632,34 @@ helm upgrade nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
 ```
 
 [![Connectivity Link]({{ '/images/connectivity-link.png' | relative_url }})]({{ '/images/connectivity-link.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Connectivity Link: Gateway API y HTTPRoutes exponiendo webapp y APIs.</span>
+<span class="img-caption">Connectivity Link: Gateway API and HTTPRoutes exposing webapp and APIs.</span>
 
-[![Connectivity Link con Auth]({{ '/images/connectivity-link-auth.png' | relative_url }})]({{ '/images/connectivity-link-auth.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Connectivity Link con Kuadrant AuthPolicy (X-API-Key) y RateLimitPolicy en /api-bills.</span>
+[![Connectivity Link with Auth]({{ '/images/connectivity-link-auth.png' | relative_url }})]({{ '/images/connectivity-link-auth.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Connectivity Link with Kuadrant AuthPolicy (X-API-Key) and RateLimitPolicy on /api-bills.</span>
 
 ---
 
-# 8. Seguridad: API Keys y Políticas {#seguridad}
+# 8. Security: API Keys & Policies {#security}
 
-La seguridad en NFL Wallet se implementa en múltiples capas, siguiendo el principio de defensa en profundidad. El flujo end-to-end de un request autenticado es:
+Security in Stadium Wallet is implemented across multiple layers, following the defense-in-depth principle. The end-to-end flow of an authenticated request is:
 
-1. El request llega al **Gateway** (Envoy gestionado por Connectivity Link)
-2. **Authorino** intercepta el request y busca credenciales: extrae el header `X-Api-Key` y lo compara contra los Secrets de Kubernetes que tienen el label `api: nfl-wallet-prod`
-3. Si la credencial es válida, **OPA** evalúa las reglas Rego definidas en la AuthPolicy
-4. **Limitador** verifica que el consumidor no haya excedido su cuota (según su Tier: bronze/silver/gold)
-5. Si todas las validaciones pasan, el request se forwarded al backend con mTLS (ztunnel/Waypoint)
-6. Si falla autenticación → **403 Forbidden**; si falla cuota → **429 Too Many Requests**
+1. The request arrives at the **Gateway** (Envoy managed by Connectivity Link)
+2. **Authorino** intercepts the request and searches for credentials: extracts the `X-Api-Key` header and compares it against Kubernetes Secrets with the label `api: nfl-wallet-prod`
+3. If the credential is valid, **OPA** evaluates the Rego rules defined in the AuthPolicy
+4. **Limitador** verifies the consumer hasn't exceeded their quota (based on their Tier: bronze/silver/gold)
+5. If all validations pass, the request is forwarded to the backend with mTLS (ztunnel/Waypoint)
+6. If authentication fails → **403 Forbidden**; if quota fails → **429 Too Many Requests**
 
-> **Modelos de autenticación soportados por Connectivity Link:** NFL Wallet utiliza **API Keys** como mecanismo de autenticación. Connectivity Link también soporta **OIDC/OAuth2** con proveedores como Red Hat build of Keycloak, como se demuestra en el artículo [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) con la aplicación NeuralBank. Ambos modelos son complementarios y pueden coexistir en el mismo clúster.
+> **Authentication models supported by Connectivity Link:** Stadium Wallet uses **API Keys** as its authentication mechanism. Connectivity Link also supports **OIDC/OAuth2** with providers like Red Hat build of Keycloak, as demonstrated in the article [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) with the NeuralBank application. Both models are complementary and can coexist in the same cluster.
 
-## 8.1 Dos Modelos de Seguridad
+## 8.1 Two Security Models
 
-| Modelo | Ubicación | CRD | Caso de Uso |
-|--------|-----------|-----|-------------|
-| **Istio AuthorizationPolicy** | Service Mesh (workload) | `security.istio.io/v1` | Validación directa en el pod |
-| **AuthPolicy con Authorino** | Gateway (Kuadrant) | `kuadrant.io/v1` | Validación en el gateway con 403 personalizado |
+| Model | Location | CRD | Use Case |
+|-------|----------|-----|----------|
+| **Istio AuthorizationPolicy** | Service Mesh (workload) | `security.istio.io/v1` | Direct pod-level validation |
+| **AuthPolicy with Authorino** | Gateway (Kuadrant) | `kuadrant.io/v1` | Gateway-level validation with custom 403 |
 
-## 8.2 AuthorizationPolicy de Istio
+## 8.2 Istio AuthorizationPolicy
 
 ```yaml
 apiVersion: security.istio.io/v1
@@ -677,11 +677,11 @@ spec:
           values: ["*"]
 ```
 
-## 8.3 AuthPolicy de Kuadrant (Gateway)
+## 8.3 Kuadrant AuthPolicy (Gateway)
 
-La [AuthPolicy](https://docs.kuadrant.io/) es el CRD de Kuadrant que define reglas de autenticación y autorización a nivel de Gateway o HTTPRoute. Internamente, Kuadrant delega la ejecución a **Authorino**, que actúa como servidor de autorización externo (ext-authz) integrado con Envoy.
+The [AuthPolicy](https://docs.kuadrant.io/) is Kuadrant's CRD for defining authentication and authorization rules at the Gateway or HTTPRoute level. Internally, Kuadrant delegates execution to **Authorino**, which acts as an external authorization server (ext-authz) integrated with Envoy.
 
-**Cómo Authorino descubre credenciales:** Authorino busca Secrets de Kubernetes que contengan labels específicos (por ejemplo `api: nfl-wallet-prod`). Cuando un request incluye el header `X-Api-Key`, Authorino compara el valor contra todos los Secrets que matchean el label selector. Este mecanismo permite aprovisionar y revocar API Keys de forma dinámica sin reiniciar ningún componente — basta con crear o eliminar un Secret con el label correspondiente.
+**How Authorino discovers credentials:** Authorino searches for Kubernetes Secrets containing specific labels (e.g., `api: nfl-wallet-prod`). When a request includes the `X-Api-Key` header, Authorino compares the value against all Secrets matching the label selector. This mechanism allows dynamic API Key provisioning and revocation without restarting any component — simply create or delete a Secret with the corresponding label.
 
 ```yaml
 apiVersion: kuadrant.io/v1
@@ -710,30 +710,30 @@ spec:
             value: application/json
 ```
 
-## 8.4 Seguridad por Ambiente
+## 8.4 Security by Environment
 
-NFL Wallet implementa una **estrategia de seguridad progresiva** donde cada ambiente incrementa el nivel de protección. Esto permite iteración rápida en desarrollo, validación de integración en test, y Zero Trust completo en producción:
+Stadium Wallet implements a **progressive security strategy** where each environment increases the level of protection. This allows rapid iteration in development, integration validation in test, and full Zero Trust in production:
 
-| Ambiente | API Key | AuthPolicy | Modelo de Mesh |
-|----------|---------|------------|----------------|
-| **Dev** | No requerida | Sin autenticación | Sidecar mode (`istio-injection: enabled`) |
+| Environment | API Key | AuthPolicy | Mesh Model |
+|-------------|---------|------------|------------|
+| **Dev** | Not required | No authentication | Sidecar mode (`istio-injection: enabled`) |
 | **Test** | `nfl-wallet-customers-key` | AuthPolicy + API keys | Ambient mode (`istio.io/dataplane-mode: ambient`) |
 | **Prod** | `nfl-wallet-customers-key` | AuthPolicy + API keys + canary route | Ambient mode + Waypoint proxies |
 
-- **Dev sin auth** permite a los desarrolladores iterar rápidamente sin gestionar credenciales, enfocándose en la lógica de negocio
-- **Test con auth** valida que la integración con Authorino y las API Keys funciona correctamente antes de llegar a producción
-- **Prod con auth + canary + ambient** garantiza Zero Trust completo: mTLS en todo el tráfico inter-servicio, validación de credenciales en el Gateway, rate limiting por Tier, y capacidad de despliegue canary para rollouts seguros
+- **Dev without auth** allows developers to iterate quickly without managing credentials, focusing on business logic
+- **Test with auth** validates that Authorino and API Key integration works correctly before reaching production
+- **Prod with auth + canary + ambient** guarantees full Zero Trust: mTLS on all inter-service traffic, credential validation at the Gateway, rate limiting by Tier, and canary deployment capability for safe rollouts
 
-## 8.5 Restricción de Acceso entre Namespaces (Test / Prod) {#namespace-isolation}
+## 8.5 Namespace Access Restriction (Test / Prod) {#namespace-isolation}
 
-En un entorno multi-ambiente sobre el mismo clúster, es crítico que los servicios de **test** no puedan acceder a los de **prod** y viceversa. OSSM3 en Ambient Mode proporciona este aislamiento a través de **AuthorizationPolicy** de Istio a nivel de namespace.
+In a multi-environment setup on the same cluster, it is critical that **test** services cannot access **prod** services and vice versa. OSSM3 in Ambient Mode provides this isolation through Istio **AuthorizationPolicy** at the namespace level.
 
-### Principio de aislamiento
+### Isolation principle
 
-Cada namespace (`nfl-wallet-test`, `nfl-wallet-prod`) aplica una **AuthorizationPolicy** que solo permite tráfico originado desde el mismo namespace y desde el sistema de mesh (gateways, waypoints):
+Each namespace (`nfl-wallet-test`, `nfl-wallet-prod`) applies an **AuthorizationPolicy** that only allows traffic originating from the same namespace and from the mesh system (gateways, waypoints):
 
 ```yaml
-# Restricción de acceso: solo tráfico del mismo namespace en PROD
+# Access restriction: only same-namespace traffic in PROD
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -742,22 +742,22 @@ metadata:
 spec:
   action: ALLOW
   rules:
-  # Permitir tráfico desde el mismo namespace
+  # Allow traffic from the same namespace
   - from:
     - source:
         namespaces: ["nfl-wallet-prod"]
-  # Permitir tráfico desde el gateway/waypoint de Istio
+  # Allow traffic from the Istio gateway/waypoint
   - from:
     - source:
         namespaces: ["istio-system"]
-  # Permitir tráfico desde el ztunnel (ambient mode)
+  # Allow traffic from ztunnel (ambient mode)
   - from:
     - source:
         namespaces: ["ztunnel"]
 ```
 
 ```yaml
-# Restricción equivalente para TEST
+# Equivalent restriction for TEST
 apiVersion: security.istio.io/v1
 kind: AuthorizationPolicy
 metadata:
@@ -777,21 +777,21 @@ spec:
         namespaces: ["ztunnel"]
 ```
 
-### Resultado del aislamiento
+### Isolation result
 
-| Origen → Destino | Permitido | Mecanismo |
-|-------------------|-----------|-----------|
-| nfl-wallet-test → nfl-wallet-test | Si | Same-namespace rule |
-| nfl-wallet-prod → nfl-wallet-prod | Si | Same-namespace rule |
-| nfl-wallet-test → nfl-wallet-prod | **No** | Bloqueado por AuthorizationPolicy |
-| nfl-wallet-prod → nfl-wallet-test | **No** | Bloqueado por AuthorizationPolicy |
-| nfl-wallet-dev → nfl-wallet-prod | **No** | Bloqueado por AuthorizationPolicy |
-| istio-system → nfl-wallet-prod | Si | Gateway/Waypoint ingress |
-| External (via Gateway) → nfl-wallet-prod | Si | Tráfico entra por istio-system |
+| Source → Destination | Allowed | Mechanism |
+|----------------------|---------|-----------|
+| nfl-wallet-test → nfl-wallet-test | Yes | Same-namespace rule |
+| nfl-wallet-prod → nfl-wallet-prod | Yes | Same-namespace rule |
+| nfl-wallet-test → nfl-wallet-prod | **No** | Blocked by AuthorizationPolicy |
+| nfl-wallet-prod → nfl-wallet-test | **No** | Blocked by AuthorizationPolicy |
+| nfl-wallet-dev → nfl-wallet-prod | **No** | Blocked by AuthorizationPolicy |
+| istio-system → nfl-wallet-prod | Yes | Gateway/Waypoint ingress |
+| External (via Gateway) → nfl-wallet-prod | Yes | Traffic enters through istio-system |
 
-### Aplicación via Kustomize
+### Applied via Kustomize
 
-Las AuthorizationPolicy se incluyen en cada overlay de Kustomize:
+The AuthorizationPolicies are included in each Kustomize overlay:
 
 ```
 nfl-wallet/overlays/test/restrict-cross-namespace.yaml
@@ -800,21 +800,21 @@ nfl-wallet/overlays/test-east/restrict-cross-namespace.yaml
 nfl-wallet/overlays/prod-west/restrict-cross-namespace.yaml
 ```
 
-ArgoCD sincroniza estas políticas automáticamente al desplegar cada ambiente.
+ArgoCD automatically syncs these policies when deploying each environment.
 
-> **Dev sin restricción:** El ambiente dev (`nfl-wallet-dev`) intencionalmente no aplica esta restricción para facilitar el desarrollo y debugging cross-service.
+> **Dev without restriction:** The dev environment (`nfl-wallet-dev`) intentionally does not apply this restriction to facilitate development and cross-service debugging.
 
-## 8.5.1 Políticas entre Namespaces con Gateway API e Istio {#gateway-namespace-policies}
+## 8.5.1 Cross-Namespace Policies with Gateway API & Istio {#gateway-namespace-policies}
 
-Además de las AuthorizationPolicy a nivel de workload, la **Gateway API** e **Istio** ofrecen mecanismos adicionales para controlar el tráfico entre namespaces. Estas opciones operan a diferentes niveles (L4/L7) y ofrecen granularidad distinta.
+Beyond workload-level AuthorizationPolicy, the **Gateway API** and **Istio** offer additional mechanisms to control traffic between namespaces. These options operate at different layers (L4/L7) and provide varying granularity.
 
-### Opción 1: ReferenceGrant (Gateway API nativo)
+### Option 1: ReferenceGrant (native Gateway API)
 
-El recurso `ReferenceGrant` (antes `ReferencePolicy`) de la Gateway API controla qué namespaces pueden referenciar recursos de otro namespace. Esto es útil para restringir qué HTTPRoutes pueden apuntar a Services en otro namespace:
+The `ReferenceGrant` resource (formerly `ReferencePolicy`) from the Gateway API controls which namespaces can reference resources in another namespace. This is useful for restricting which HTTPRoutes can point to Services in another namespace:
 
 ```yaml
-# Permitir que SOLO las HTTPRoutes de nfl-wallet-prod
-# referencien el gateway en istio-system
+# Allow ONLY HTTPRoutes from nfl-wallet-prod
+# to reference the gateway in istio-system
 apiVersion: gateway.networking.k8s.io/v1beta1
 kind: ReferenceGrant
 metadata:
@@ -830,11 +830,11 @@ spec:
     kind: Service
 ```
 
-Sin un `ReferenceGrant` correspondiente, las HTTPRoutes de `nfl-wallet-test` **no pueden** referenciar el Gateway de otro namespace, lo que impide la exposición accidental de rutas entre ambientes.
+Without a corresponding `ReferenceGrant`, HTTPRoutes from `nfl-wallet-test` **cannot** reference the Gateway in another namespace, preventing accidental route exposure between environments.
 
-### Opción 2: Istio PeerAuthentication (mTLS estricto por namespace)
+### Option 2: Istio PeerAuthentication (strict mTLS per namespace)
 
-`PeerAuthentication` fuerza mTLS estricto en un namespace, lo cual garantiza que solo pods con identidad SPIFFE válida del mismo trust domain puedan comunicarse:
+`PeerAuthentication` enforces strict mTLS in a namespace, ensuring that only pods with a valid SPIFFE identity from the same trust domain can communicate:
 
 ```yaml
 apiVersion: security.istio.io/v1
@@ -847,11 +847,11 @@ spec:
     mode: STRICT
 ```
 
-Combinado con AuthorizationPolicy, esto asegura que incluso si un pod malicioso intenta enviar tráfico, el ztunnel rechazará la conexión si no tiene un certificado mTLS válido del namespace permitido.
+Combined with AuthorizationPolicy, this ensures that even if a rogue pod attempts to send traffic, the ztunnel will reject the connection if it doesn't have a valid mTLS certificate from the allowed namespace.
 
-### Opción 3: Sidecar Resource (control de egress por namespace)
+### Option 3: Sidecar Resource (egress control per namespace)
 
-El recurso `Sidecar` de Istio (también funcional en Ambient Mode a través de Waypoints) limita los hosts a los que un namespace puede enviar tráfico saliente:
+The Istio `Sidecar` resource (also functional in Ambient Mode through Waypoints) limits the hosts to which a namespace can send outbound traffic:
 
 ```yaml
 apiVersion: networking.istio.io/v1
@@ -862,17 +862,17 @@ metadata:
 spec:
   egress:
   - hosts:
-    # Solo puede comunicarse con servicios en su propio namespace
+    # Can only communicate with services in its own namespace
     - "./nfl-wallet-test/*"
-    # Y con el sistema Istio
+    # And with the Istio system
     - "istio-system/*"
 ```
 
-Esto previene que los servicios de test descubran o intenten conectarse a servicios de producción, ya que no serán visibles en su service registry.
+This prevents test services from discovering or attempting to connect to production services, as they won't be visible in the service registry.
 
-### Opción 4: Gateway Listeners con allowedRoutes (namespace scoping)
+### Option 4: Gateway Listeners with allowedRoutes (namespace scoping)
 
-Los Listeners del Gateway pueden restringir qué namespaces pueden crear HTTPRoutes que lo referencien:
+Gateway Listeners can restrict which namespaces can create HTTPRoutes that reference them:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -892,11 +892,11 @@ spec:
       - name: prod-tls-cert
     allowedRoutes:
       namespaces:
-        from: Same                   # Solo HTTPRoutes del mismo namespace
+        from: Same                   # Only HTTPRoutes from the same namespace
 ```
 
 ```yaml
-# Gateway compartido que acepta rutas de namespaces específicos
+# Shared Gateway that accepts routes from specific namespaces
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -914,7 +914,7 @@ spec:
         from: Selector
         selector:
           matchLabels:
-            environment: production  # Solo namespaces con este label
+            environment: production  # Only namespaces with this label
   - name: test-only
     port: 443
     protocol: HTTPS
@@ -927,9 +927,9 @@ spec:
             environment: test
 ```
 
-### Opción 5: Kuadrant RateLimitPolicy por namespace
+### Option 5: Kuadrant RateLimitPolicy per namespace
 
-Kuadrant permite aplicar `RateLimitPolicy` directamente al Gateway, con límites diferenciados por namespace de origen. Esto evita que un ambiente monopolice los recursos compartidos:
+Kuadrant allows applying `RateLimitPolicy` directly to the Gateway, with differentiated limits by source namespace. This prevents one environment from monopolizing shared resources:
 
 ```yaml
 apiVersion: kuadrant.io/v1beta2
@@ -963,24 +963,24 @@ spec:
         value: nfl-wallet-prod
 ```
 
-### Comparación de Opciones
+### Options Comparison
 
-| Mecanismo | Capa | Qué Controla | Cuándo Usar |
-|-----------|------|-------------|-------------|
-| **AuthorizationPolicy** | L4/L7 | Quién puede enviar tráfico a un workload | Aislamiento básico entre namespaces |
-| **ReferenceGrant** | API | Qué namespaces pueden crear rutas hacia un Gateway/Service | Controlar qué ambientes usan qué gateways |
-| **PeerAuthentication** | L4 | Requiere mTLS estricto para todo tráfico | Garantizar identidad criptográfica |
-| **Sidecar (egress)** | L7 | A qué hosts puede enviar tráfico un namespace | Limitar el descubrimiento de servicios |
-| **allowedRoutes** | API | Qué namespaces pueden crear HTTPRoutes en un listener | Scoping de gateways compartidos |
-| **RateLimitPolicy** | L7 | Cuántas requests por namespace | Prevenir que un ambiente abuse del gateway |
+| Mechanism | Layer | What It Controls | When to Use |
+|-----------|-------|-----------------|-------------|
+| **AuthorizationPolicy** | L4/L7 | Who can send traffic to a workload | Basic namespace isolation |
+| **ReferenceGrant** | API | Which namespaces can create routes to a Gateway/Service | Control which environments use which gateways |
+| **PeerAuthentication** | L4 | Requires strict mTLS for all traffic | Guarantee cryptographic identity |
+| **Sidecar (egress)** | L7 | Which hosts a namespace can send traffic to | Limit service discovery |
+| **allowedRoutes** | API | Which namespaces can create HTTPRoutes on a listener | Scoping shared gateways |
+| **RateLimitPolicy** | L7 | How many requests per namespace | Prevent one environment from abusing the gateway |
 
-> **Recomendación:** Para NFL Wallet, se combinan **AuthorizationPolicy** (aislamiento de workloads), **PeerAuthentication STRICT** (mTLS obligatorio), y **allowedRoutes** en el Gateway (scoping de rutas por namespace). Esta combinación provee defensa en profundidad.
+> **Recommendation:** For Stadium Wallet, we combine **AuthorizationPolicy** (workload isolation), **PeerAuthentication STRICT** (mandatory mTLS), and **allowedRoutes** on the Gateway (route scoping per namespace). This combination provides defense in depth.
 
-## 8.6 Failover Multi-Cluster con DNSPolicy y Route 53 {#dns-failover}
+## 8.6 Multi-Cluster Failover with DNSPolicy & Route 53 {#dns-failover}
 
-Para lograr **alta disponibilidad geográfica** y failover automático entre los clústeres East y West, Kuadrant integra **DNSPolicy** con **Amazon Route 53** (u otros proveedores DNS compatibles). Esto permite que, si un clúster falla, el tráfico se redirija automáticamente al clúster sano.
+To achieve **geographic high availability** and automatic failover between East and West clusters, Kuadrant integrates **DNSPolicy** with **Amazon Route 53** (or other compatible DNS providers). This ensures that if one cluster fails, traffic is automatically redirected to the healthy cluster.
 
-### Arquitectura del Failover DNS
+### DNS Failover Architecture
 
 ```mermaid
 graph TD
@@ -1014,9 +1014,9 @@ graph TD
     end
 ```
 
-### Definición de DNSPolicy con Kuadrant
+### DNSPolicy Definition with Kuadrant
 
-Kuadrant proporciona el CRD `DNSPolicy` que se vincula al Gateway y gestiona automáticamente los registros DNS:
+Kuadrant provides the `DNSPolicy` CRD that binds to the Gateway and automatically manages DNS records:
 
 ```yaml
 apiVersion: kuadrant.io/v1
@@ -1030,17 +1030,17 @@ spec:
     kind: Gateway
     name: nfl-wallet-gateway
   providerRefs:
-  - name: aws-route53-credentials    # Secret con credenciales de Route 53
-  routingStrategy: loadbalanced       # Estrategia: loadbalanced o simple
+  - name: aws-route53-credentials    # Secret with Route 53 credentials
+  routingStrategy: loadbalanced       # Strategy: loadbalanced or simple
   loadBalancing:
-    geo: us-east-1                    # Región geográfica de este clúster
-    defaultGeo: true                  # Este es el default si la geo no matchea
-    weight: 120                       # Peso relativo para weighted routing
+    geo: us-east-1                    # Geographic region for this cluster
+    defaultGeo: true                  # Default if geo doesn't match
+    weight: 120                       # Relative weight for weighted routing
 ```
 
-### Configuración del Provider (Route 53)
+### Provider Configuration (Route 53)
 
-El Secret con credenciales de AWS para Route 53:
+The AWS credentials Secret for Route 53:
 
 ```yaml
 apiVersion: v1
@@ -1055,23 +1055,23 @@ data:
   AWS_REGION: <base64>               # us-east-1
 ```
 
-### Estrategias de Routing DNS
+### DNS Routing Strategies
 
-| Estrategia | Comportamiento | Caso de Uso |
-|------------|---------------|-------------|
-| **simple** | Un solo registro A/CNAME | Un solo clúster, sin failover |
-| **loadbalanced** | Múltiples registros con health checks | Multi-cluster con failover automático |
+| Strategy | Behavior | Use Case |
+|----------|----------|----------|
+| **simple** | Single A/CNAME record | Single cluster, no failover |
+| **loadbalanced** | Multiple records with health checks | Multi-cluster with automatic failover |
 
-### Failover con Health Checks
+### Failover with Health Checks
 
-Cuando se usa `routingStrategy: loadbalanced`, Kuadrant configura automáticamente:
+When using `routingStrategy: loadbalanced`, Kuadrant automatically configures:
 
-1. **Health Checks de Route 53:** Verifican que el endpoint del Gateway responda en cada clúster
-2. **Registros DNS ponderados:** Distribuyen tráfico entre East y West según los pesos configurados
-3. **Failover automático:** Si el health check de East falla, Route 53 deja de resolver hacia East y envía todo el tráfico a West
+1. **Route 53 Health Checks:** Verify that the Gateway endpoint responds in each cluster
+2. **Weighted DNS Records:** Distribute traffic between East and West based on configured weights
+3. **Automatic Failover:** If the East health check fails, Route 53 stops resolving to East and sends all traffic to West
 
 ```yaml
-# DNSPolicy para Cluster East (Primary)
+# DNSPolicy for Cluster East (Primary)
 apiVersion: kuadrant.io/v1
 kind: DNSPolicy
 metadata:
@@ -1092,7 +1092,7 @@ spec:
 ```
 
 ```yaml
-# DNSPolicy para Cluster West (Secondary)
+# DNSPolicy for Cluster West (Secondary)
 apiVersion: kuadrant.io/v1
 kind: DNSPolicy
 metadata:
@@ -1112,85 +1112,85 @@ spec:
     weight: 80
 ```
 
-### Resultado: Resolución DNS
+### Result: DNS Resolution
 
-| Escenario | East Health | West Health | DNS Resolución |
-|-----------|------------|------------|----------------|
-| Normal | Healthy | Healthy | 60% East / 40% West (por pesos 120:80) |
-| East Down | Unhealthy | Healthy | 100% West (failover automático) |
+| Scenario | East Health | West Health | DNS Resolution |
+|----------|------------|------------|----------------|
+| Normal | Healthy | Healthy | 60% East / 40% West (by weights 120:80) |
+| East Down | Unhealthy | Healthy | 100% West (automatic failover) |
 | West Down | Healthy | Unhealthy | 100% East |
-| Ambos Down | Unhealthy | Unhealthy | Sin resolución (alerta) |
+| Both Down | Unhealthy | Unhealthy | No resolution (alert) |
 
-> **Nota:** DNSPolicy requiere que el operador de Kuadrant tenga acceso a la API de Route 53 (o el proveedor DNS configurado). Las credenciales deben manejarse con **External Secrets Operator** o **Sealed Secrets** en producción.
+> **Note:** DNSPolicy requires the Kuadrant operator to have access to the Route 53 API (or configured DNS provider). Credentials should be managed with **External Secrets Operator** or **Sealed Secrets** in production.
 
 ---
 
-# 9. GitOps Multi-Cluster con ACM {#gitops}
+# 9. Multi-Cluster GitOps with ACM {#gitops}
 
-### Por qué Red Hat Advanced Cluster Management
+### Why Red Hat Advanced Cluster Management
 
-En un entorno de producción real, una sola instancia de OpenShift no es suficiente. Los requisitos de **alta disponibilidad**, **localidad de datos** y **cumplimiento regulatorio** exigen distribuir workloads en múltiples clústeres. Sin embargo, gestionar N clústeres de forma independiente multiplica la complejidad operativa: N conjuntos de políticas, N configuraciones de red, N despliegues manuales.
+In a real production environment, a single OpenShift instance is not enough. Requirements for **high availability**, **data locality**, and **regulatory compliance** demand distributing workloads across multiple clusters. However, managing N clusters independently multiplies operational complexity: N sets of policies, N network configurations, N manual deployments.
 
-**Red Hat Advanced Cluster Management (ACM)** resuelve esto con un modelo **Hub-and-Spoke**:
+**Red Hat Advanced Cluster Management (ACM)** solves this with a **Hub-and-Spoke** model:
 
-- **Hub centralizado:** Un clúster de gestión que define políticas, placements y configuraciones para todos los managed clusters
-- **Managed clusters (East/West):** Clústeres de workload que reciben sus configuraciones desde el hub, eliminando drift y configuración manual
-- **Placement API:** Permite seleccionar dinámicamente en qué clústeres se despliega cada workload según labels, capacidad o reglas de afinidad
-- **GitOpsCluster:** Conecta ACM con ArgoCD — ACM registra automáticamente los managed clusters como destinos de ArgoCD, generando los Secrets necesarios sin intervención manual
+- **Centralized hub:** A management cluster that defines policies, placements, and configurations for all managed clusters
+- **Managed clusters (East/West):** Workload clusters that receive their configurations from the hub, eliminating drift and manual configuration
+- **Placement API:** Dynamically selects which clusters receive each workload based on labels, capacity, or affinity rules
+- **GitOpsCluster:** Connects ACM with ArgoCD — ACM automatically registers managed clusters as ArgoCD targets, generating the required Secrets without manual intervention
 
-En NFL Wallet, ACM genera automáticamente **6 Applications** de ArgoCD (dev/test/prod × east/west) a partir de un único `ApplicationSet` con `clusterDecisionResource`, garantizando que cualquier cambio en Git se propague de forma idéntica a todos los clústeres.
+In Stadium Wallet, ACM automatically generates **6 ArgoCD Applications** (dev/test/prod × east/west) from a single `ApplicationSet` with `clusterDecisionResource`, ensuring that any Git change propagates identically to all clusters.
 
-> **Fuente:** [Red Hat Advanced Cluster Management for Kubernetes](https://www.redhat.com/en/technologies/management/advanced-cluster-management)
+> **Source:** [Red Hat Advanced Cluster Management for Kubernetes](https://www.redhat.com/en/technologies/management/advanced-cluster-management)
 
-## 9.1 Modos de Despliegue
+## 9.1 Deployment Modes
 
-### Con ACM (Hub + Managed Clusters East/West)
+### With ACM (Hub + Managed Clusters East/West)
 
 ```bash
-# 1. Placements + GitOpsCluster (crea secrets east/west en ArgoCD)
+# 1. Placements + GitOpsCluster (creates east/west secrets in ArgoCD)
 kubectl apply -f app-nfl-wallet-acm.yaml -n openshift-gitops
 
-# 2. ApplicationSet (genera 6 Applications)
+# 2. ApplicationSet (generates 6 Applications)
 kubectl apply -f app-nfl-wallet-acm-cluster-decision.yaml -n openshift-gitops
 ```
 
-### Sin ACM (East/West independientes)
+### Without ACM (Independent East/West)
 
 ```bash
 kubectl apply -f app-nfl-wallet-east.yaml -n openshift-gitops
 kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 ```
 
-## 9.2 Ambientes y Namespaces
+## 9.2 Environments and Namespaces
 
-| Ambiente | Namespace |
-|----------|-----------|
+| Environment | Namespace |
+|-------------|-----------|
 | Dev | `nfl-wallet-dev` |
 | Test | `nfl-wallet-test` |
 | Prod | `nfl-wallet-prod` |
 
-## 9.3 Estructura de Overlays Kustomize
+## 9.3 Kustomize Overlay Structure
 
-| Path | Uso |
+| Path | Use |
 |------|-----|
-| `nfl-wallet/overlays/dev` | Dev single-cluster |
-| `nfl-wallet/overlays/test` | Test single-cluster |
-| `nfl-wallet/overlays/prod` | Prod single-cluster |
-| `nfl-wallet/overlays/dev-east` | ACM: dev en east |
-| `nfl-wallet/overlays/dev-west` | ACM: dev en west |
-| `nfl-wallet/overlays/test-east` | ACM: test en east |
-| `nfl-wallet/overlays/test-west` | ACM: test en west |
-| `nfl-wallet/overlays/prod-east` | ACM: prod en east |
-| `nfl-wallet/overlays/prod-west` | ACM: prod en west |
+| `nfl-wallet/overlays/dev` | Single-cluster dev |
+| `nfl-wallet/overlays/test` | Single-cluster test |
+| `nfl-wallet/overlays/prod` | Single-cluster prod |
+| `nfl-wallet/overlays/dev-east` | ACM: dev on east |
+| `nfl-wallet/overlays/dev-west` | ACM: dev on west |
+| `nfl-wallet/overlays/test-east` | ACM: test on east |
+| `nfl-wallet/overlays/test-west` | ACM: test on west |
+| `nfl-wallet/overlays/prod-east` | ACM: prod on east |
+| `nfl-wallet/overlays/prod-west` | ACM: prod on west |
 
-## 9.4 Estructura del Repositorio GitOps
+## 9.4 GitOps Repository Structure
 
 ```
 .
 ├── app-nfl-wallet-acm.yaml                   # Placements + GitOpsCluster (ACM)
 ├── app-nfl-wallet-acm-cluster-decision.yaml  # ApplicationSet (list generator)
-├── app-nfl-wallet-east.yaml                  # ApplicationSet east (sin ACM)
-├── app-nfl-wallet-west.yaml                  # ApplicationSet west (sin ACM)
+├── app-nfl-wallet-east.yaml                  # ApplicationSet east (no ACM)
+├── app-nfl-wallet-west.yaml                  # ApplicationSet west (no ACM)
 ├── kuadrant.yaml                             # Kuadrant CR
 ├── nfl-wallet/                               # Kustomize (routes, AuthPolicy, API keys)
 │   ├── base/                                 # gateway route
@@ -1198,77 +1198,77 @@ kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 │   └── overlays/                             # dev, test, prod + east/west
 ├── nfl-wallet-observability/                 # Grafana + ServiceMonitors
 ├── observability/                            # Grafana Operator base
-├── docs/                                     # Documentación
+├── docs/                                     # Documentation
 └── scripts/                                  # force-sync-apps, test-apis, etc.
 ```
 
-**ArgoCD como motor de reconciliación:** Las siguientes capturas muestran cómo ArgoCD gestiona las Applications generadas por el ApplicationSet. Cada Application corresponde a una combinación ambiente/clúster y se sincroniza de forma independiente, permitiendo rollbacks selectivos por ambiente sin afectar el resto.
+**ArgoCD as the reconciliation engine:** The following screenshots show how ArgoCD manages the Applications generated by the ApplicationSet. Each Application corresponds to an environment/cluster combination and syncs independently, enabling selective rollbacks per environment without affecting the rest.
 
 [![OpenShift GitOps]({{ '/images/gitops.png' | relative_url }})]({{ '/images/gitops.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
+<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications and sync status.</span>
 
 [![GitOps Applications]({{ '/images/gitops1.png' | relative_url }})]({{ '/images/gitops1.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ArgoCD — Detalle de las Applications generadas por el ApplicationSet.</span>
+<span class="img-caption">ArgoCD — Detail of Applications generated by the ApplicationSet.</span>
 
-**ACM como plano de control multi-cluster:** ACM proporciona la vista unificada de todos los clústeres managed. El hub distribuye las políticas de red, seguridad y compliance a East y West de forma consistente, mientras que la Placement API decide dinámicamente dónde se despliega cada workload.
+**ACM as the multi-cluster control plane:** ACM provides a unified view of all managed clusters. The hub distributes network, security, and compliance policies to East and West consistently, while the Placement API dynamically decides where each workload is deployed.
 
 [![ACM Topology]({{ '/images/ACM3.png' | relative_url }})]({{ '/images/ACM3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
+<span class="img-caption">ACM — Topology with hub and managed clusters (East, West).</span>
 
 [![ACM Applications]({{ '/images/ACM4.png' | relative_url }})]({{ '/images/ACM4.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas (dev/test/prod × east/west).</span>
+<span class="img-caption">ACM — ApplicationSet and the 6 generated Applications (dev/test/prod × east/west).</span>
 
 [![ACM Apps Overview]({{ '/images/acm-apps.png' | relative_url }})]({{ '/images/acm-apps.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Vista general de las aplicaciones desplegadas en los managed clusters.</span>
+<span class="img-caption">ACM — Overview of applications deployed on managed clusters.</span>
 
 ---
 
 # 10. Red Hat Developer Hub {#developer-hub}
 
-[Red Hat Developer Hub](https://developers.redhat.com/rhdh) (RHDH), basado en el proyecto upstream [Backstage](https://backstage.io/), proporciona una experiencia de **autoservicio para desarrolladores** donde pueden descubrir APIs, solicitar acceso y obtener credenciales sin necesidad de tickets, intervención manual de operaciones, ni conocimiento de la infraestructura subyacente. Este enfoque *inner-loop* reduce la fricción entre equipos de desarrollo y plataforma.
+[Red Hat Developer Hub](https://developers.redhat.com/rhdh) (RHDH), based on the upstream [Backstage](https://backstage.io/) project, provides a **developer self-service experience** where developers can discover APIs, request access, and obtain credentials without tickets, manual operations intervention, or knowledge of the underlying infrastructure. This *inner-loop* approach reduces friction between development and platform teams.
 
-La gobernanza de las APIs se centraliza mediante **Kuadrant** en el backend y **RHDH** en el frontend. El [Plugin de Kuadrant para RHDH](https://docs.kuadrant.io/) conecta ambos mundos: las APIs se registran automáticamente en el catálogo de Backstage mediante annotations en los manifiestos GitOps, y las políticas de acceso (Tiers, AuthPolicy, RateLimitPolicy) se descubren y gestionan desde el portal.
+API governance is centralized through **Kuadrant** on the backend and **RHDH** on the frontend. The [Kuadrant Plugin for RHDH](https://docs.kuadrant.io/) connects both worlds: APIs are automatically registered in the Backstage catalog via annotations in GitOps manifests, and access policies (Tiers, AuthPolicy, RateLimitPolicy) are discovered and managed from the portal.
 
-### Mapeo de Tiers a CRDs
+### Tier to CRD Mapping
 
-Los Tiers de acceso definidos en RHDH se materializan como CRDs de Kuadrant en el clúster:
+Access tiers defined in RHDH materialize as Kuadrant CRDs in the cluster:
 
-| Tier en RHDH | CRD Kuadrant | Límite | Secret Label |
-|--------------|-------------|--------|-------------|
-| Bronze | `PlanPolicy` + `RateLimitPolicy` | 100 req/día | `tier: bronze` |
-| Silver | `PlanPolicy` + `RateLimitPolicy` | 500 req/día | `tier: silver` |
-| Gold | `PlanPolicy` + `RateLimitPolicy` | 1000 req/día | `tier: gold` |
+| RHDH Tier | Kuadrant CRD | Limit | Secret Label |
+|-----------|-------------|-------|-------------|
+| Bronze | `PlanPolicy` + `RateLimitPolicy` | 100 req/day | `tier: bronze` |
+| Silver | `PlanPolicy` + `RateLimitPolicy` | 500 req/day | `tier: silver` |
+| Gold | `PlanPolicy` + `RateLimitPolicy` | 1000 req/day | `tier: gold` |
 
-Cuando un administrador define un Tier via `PlanPolicy`, Kuadrant crea automáticamente la `RateLimitPolicy` correspondiente. Cuando un desarrollador solicita acceso desde RHDH, Kuadrant provisiona el `Secret` con el API Key y los labels que Authorino utiliza para validación.
+When an administrator defines a Tier via `PlanPolicy`, Kuadrant automatically creates the corresponding `RateLimitPolicy`. When a developer requests access from RHDH, Kuadrant provisions the `Secret` with the API Key and labels that Authorino uses for validation.
 
-## 10.1 Flujo de Autoservicio
+## 10.1 Self-Service Flow
 
-1. **Descubrimiento:** En el catálogo de RHDH, localizar `nfl-wallet-api-customers` (Tipo: API - OpenAPI, Lifecycle: production)
-2. **Solicitud de Acceso:** Clic en **+ Request API Access**
-3. **Configuración del Tier:** Seleccionar `silver (500 per daily)`
-4. **Use Case (opcional):** Justificación técnica o de negocio
-5. **Aprobación y Aprovisionamiento:** Kuadrant orquesta la creación de la credencial (API Key o Token OIDC)
-6. **Enforcement:** El Gateway API intercepta, valida la credencial y aplica el límite de 500 peticiones/día
+1. **Discovery:** In the RHDH catalog, locate `nfl-wallet-api-customers` (Type: API - OpenAPI, Lifecycle: production)
+2. **Request Access:** Click **+ Request API Access**
+3. **Tier Configuration:** Select `silver (500 per daily)`
+4. **Use Case (optional):** Technical or business justification
+5. **Approval & Provisioning:** Kuadrant orchestrates credential creation (API Key or OIDC Token)
+6. **Enforcement:** Gateway API intercepts, validates the credential and enforces the 500 requests/day limit
 
 [![RHDH Kuadrant Policies]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }})]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Red Hat Developer Hub — Plugin Kuadrant: vista de Policies para nfl-wallet-api-customers. PlanPolicy y AuthPolicy descubiertas. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
+<span class="img-caption">Red Hat Developer Hub — Kuadrant Plugin: Policies view for nfl-wallet-api-customers. PlanPolicy and AuthPolicy discovered. Effective tiers: gold (1000/day), silver (500/day), bronze (100/day).</span>
 
 [![RHDH API Definition]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Red Hat Developer Hub — Definición de API: NFL Wallet - Customers API v1 (OAS 3.0). Endpoints GET /Customers y GET /Customers/{id} con botón Authorize para autenticación.</span>
+<span class="img-caption">Red Hat Developer Hub — API Definition: Stadium Wallet - Customers API v1 (OAS 3.0). Endpoints GET /Customers and GET /Customers/{id} with Authorize button for authentication.</span>
 
 [![RHDH Request Access]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }})]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Red Hat Developer Hub — Flujo de solicitud de acceso: modal "Request API Access" con selección de Tier (silver - 500 per daily) y campo de Use Case. Owner: Maximiliano Pizarro, Lifecycle: production.</span>
+<span class="img-caption">Red Hat Developer Hub — Access request flow: "Request API Access" modal with Tier selection (silver - 500 per daily) and Use Case field. Owner: Maximiliano Pizarro, Lifecycle: production.</span>
 
 [![RHDH API Keys]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Red Hat Developer Hub — API Keys aprovisionadas: Tier silver aprobado (2/3/2026), API Key generada con ejemplos de uso en cURL, Node.js, Python y Go.</span>
+<span class="img-caption">Red Hat Developer Hub — Provisioned API Keys: Silver tier approved (2/3/2026), generated API Key with usage examples in cURL, Node.js, Python and Go.</span>
 
-## 10.2 Uso de la API Key desde Developer Hub
+## 10.2 Using the API Key from Developer Hub
 
-Una vez que el acceso es aprobado en RHDH, el portal genera una **API Key** vinculada al Tier solicitado. Esta key se almacena como un **Secret** de Kubernetes con el label `api: <namespace>` (por ejemplo `api: nfl-wallet-prod`), que es el mecanismo que **Authorino** (Kuadrant) utiliza para descubrir y validar credenciales.
+Once access is approved in RHDH, the portal generates an **API Key** linked to the requested Tier. This key is stored as a Kubernetes **Secret** with the label `api: <namespace>` (e.g. `api: nfl-wallet-prod`), which is the mechanism **Authorino** (Kuadrant) uses to discover and validate credentials.
 
-### Flujo completo: del portal al request
+### Complete flow: from portal to request
 
-1. **RHDH genera el Secret** con la API Key y le asigna el label `api: nfl-wallet-prod`:
+1. **RHDH generates the Secret** with the API Key and assigns the label `api: nfl-wallet-prod`:
 
 ```yaml
 apiVersion: v1
@@ -1285,18 +1285,18 @@ data:
   api_key: <base64-encoded-key>
 ```
 
-2. **AuthPolicy referencia el label** `api: nfl-wallet-prod` como selector de credenciales. Cuando llega un request, Authorino busca todos los Secrets con ese label y valida que el header `X-Api-Key` coincida con alguno de ellos.
+2. **AuthPolicy references the label** `api: nfl-wallet-prod` as the credential selector. When a request arrives, Authorino searches all Secrets with that label and validates that the `X-Api-Key` header matches one of them.
 
-3. **El consumidor usa la key** obtenida del portal RHDH en sus requests:
+3. **The consumer uses the key** obtained from the RHDH portal in their requests:
 
 ```bash
-# Ejemplo con cURL (como se muestra en el portal RHDH)
+# cURL example (as shown in the RHDH portal)
 curl -X GET https://nfl-wallet-prod.apps.cluster.example.com/api-customers/Customers \
   -H "X-Api-Key: <your-api-key>"
 ```
 
 ```python
-# Ejemplo con Python (como se muestra en el portal RHDH)
+# Python example (as shown in the RHDH portal)
 import requests
 
 headers = {"X-Api-Key": "<your-api-key>"}
@@ -1306,9 +1306,9 @@ response = requests.get(
 )
 ```
 
-4. **El Gateway valida** el request: si la key coincide con un Secret que tiene el label correcto y el Tier no ha excedido su cuota (por ejemplo, 500 req/día para silver), el request llega al backend. Si no, retorna **403 Forbidden** o **429 Too Many Requests**.
+4. **The Gateway validates** the request: if the key matches a Secret with the correct label and the Tier has not exceeded its quota (e.g., 500 req/day for silver), the request reaches the backend. Otherwise, it returns **403 Forbidden** or **429 Too Many Requests**.
 
-### Relación Label → AuthPolicy → Secret
+### Relationship: Label → AuthPolicy → Secret
 
 ```mermaid
 sequenceDiagram
@@ -1320,54 +1320,54 @@ sequenceDiagram
     Portal->>K8s: Request API Access (Tier: silver)
     K8s->>K8s: Approve → Create Secret<br/>label: api=nfl-wallet-prod, tier=silver
 
-    Note over Portal,K8s: Consumer obtiene API Key del portal
+    Note over Portal,K8s: Consumer obtains API Key from portal
 
     rect rgb(240, 248, 255)
-        Portal->>Auth: Request con X-Api-Key header
-        Auth->>K8s: Buscar Secrets con label<br/>api=nfl-wallet-prod
-        K8s-->>Auth: Secret encontrado
-        alt Key válida y dentro de cuota
+        Portal->>Auth: Request with X-Api-Key header
+        Auth->>K8s: Search Secrets with label<br/>api=nfl-wallet-prod
+        K8s-->>Auth: Secret found
+        alt Valid key within quota
             Auth->>Backend: 200 OK → Forward request
-        else Key inválida
+        else Invalid key
             Auth-->>Portal: 403 Forbidden
-        else Cuota excedida
+        else Quota exceeded
             Auth-->>Portal: 429 Too Many Requests
         end
     end
 ```
 
-> **Importante:** Los Secrets con API Keys deben existir en el mismo namespace que la AuthPolicy. Para producción, se recomienda usar **Sealed Secrets** o **External Secrets Operator** en lugar de commitear keys directamente en Git.
+> **Important:** API Key Secrets must exist in the same namespace as the AuthPolicy. For production, use **Sealed Secrets** or **External Secrets Operator** instead of committing keys directly to Git.
 
 ---
 
-# 11. Observabilidad {#observabilidad}
+# 11. Observability {#observability}
 
-### Por qué este stack de observabilidad
+### Why This Observability Stack
 
-En una arquitectura de microservicios con Service Mesh multi-cluster, la observabilidad no es un "nice to have" — es un requisito operativo. Sin visibilidad sobre lo que ocurre en la malla, diagnosticar un error 5xx o una degradación de latencia requiere recorrer manualmente logs de múltiples pods en múltiples clústeres.
+In a microservices architecture with a multi-cluster Service Mesh, observability is not a "nice to have" — it is an operational requirement. Without visibility into what happens in the mesh, diagnosing a 5xx error or latency degradation requires manually sifting through logs from multiple pods across multiple clusters.
 
-El stack elegido cubre las **cuatro dimensiones** de la observabilidad cloud-native:
+The chosen stack covers the **four dimensions** of cloud-native observability:
 
-| Dimensión | Herramienta | Qué responde |
-|-----------|-------------|--------------|
-| **Métricas** | Prometheus + promxy | ¿Cuántas requests por segundo? ¿Cuál es el error rate? ¿Cómo evoluciona la latencia p99? |
-| **Dashboards** | Grafana | ¿Cómo se comparan los ambientes? ¿Hay anomalías en un clúster específico? |
-| **Topología del mesh** | Kiali | ¿Qué servicios se comunican entre sí? ¿Dónde se concentra el tráfico? ¿Hay circuitos rotos? |
-| **Trazas distribuidas** | TempoStack + OpenTelemetry | ¿Cuánto tarda cada hop en una request? ¿Dónde está el cuello de botella? |
+| Dimension | Tool | What It Answers |
+|-----------|------|-----------------|
+| **Metrics** | Prometheus + promxy | How many requests per second? What is the error rate? How is p99 latency trending? |
+| **Dashboards** | Grafana | How do environments compare? Are there anomalies on a specific cluster? |
+| **Mesh topology** | Kiali | Which services communicate with each other? Where is traffic concentrated? Are there broken circuits? |
+| **Distributed traces** | TempoStack + OpenTelemetry | How long does each hop take in a request? Where is the bottleneck? |
 
-Cada componente se integra nativamente con Istio/OSSM3: ztunnel y los Waypoint Proxies emiten métricas y spans automáticamente mediante el protocolo OTLP, sin necesidad de instrumentar el código de la aplicación. Esto significa que al enrolar un namespace en Ambient Mode, la observabilidad se habilita "gratis" para todo el tráfico L4 y L7.
+Each component integrates natively with Istio/OSSM3: ztunnel and Waypoint Proxies emit metrics and spans automatically via the OTLP protocol, without instrumenting application code. This means that enrolling a namespace in Ambient Mode enables observability "for free" for all L4 and L7 traffic.
 
-## 11.1 Stack de Observabilidad
+## 11.1 Observability Stack
 
-| Componente | Función |
-|------------|---------|
-| **Prometheus + promxy** | Fan-out proxy para métricas desde East y West |
+| Component | Function |
+|-----------|----------|
+| **Prometheus + promxy** | Fan-out proxy for metrics from East and West |
 | **Grafana** | Dashboards: request rate, response codes, duration, error rate |
-| **Kiali** | Topología en tiempo real del Service Mesh federado |
-| **TempoStack** | Backend de trazas distribuidas (Jaeger-compatible) |
-| **OpenTelemetry** | Instrumentación con OTLP/HTTP — spans L7 desde Waypoint proxies |
+| **Kiali** | Real-time Service Mesh federated topology |
+| **TempoStack** | Distributed tracing backend (Jaeger-compatible) |
+| **OpenTelemetry** | Instrumentation with OTLP/HTTP — L7 spans from Waypoint proxies |
 
-## 11.2 Habilitar Observabilidad con Helm
+## 11.2 Enable Observability with Helm
 
 ```bash
 helm upgrade nfl-wallet ./helm/nfl-wallet -n nfl-wallet --install \
@@ -1378,21 +1378,21 @@ helm upgrade nfl-wallet ./helm/nfl-wallet -n nfl-wallet --install \
   --set observability.rhobs.uiPlugin.enabled=true
 ```
 
-## 11.3 Dashboard de Grafana
+## 11.3 Grafana Dashboard
 
-El dashboard "NFL Wallet – All environments" incluye:
-- Variable de **Environment (namespace)** para filtrar por nfl-wallet-dev, test, prod
-- Paneles: request rate, response codes, duration, error rate, rate by service
+The "Stadium Wallet – All environments" dashboard includes:
+- **Environment (namespace)** variable to filter by nfl-wallet-dev, test, prod
+- Panels: request rate, response codes, duration, error rate, rate by service
 
-## 11.4 Queries de Prometheus (Referencia)
+## 11.4 Prometheus Queries (Reference)
 
-| Métrica | Query de ejemplo |
-|---------|-----------------|
+| Metric | Example Query |
+|--------|---------------|
 | **Total Requests** (rate) | `sum(rate(istio_requests_total[5m]))` |
 | **Successful Requests** (2xx) | `sum(rate(istio_requests_total{response_code=~"2.."}[5m]))` |
 | **Error Rate** | `sum(rate(istio_requests_total{response_code=~"5.."}[5m])) / sum(rate(istio_requests_total[5m]))` |
 
-## 11.5 Script de Pruebas de Tráfico
+## 11.5 Traffic Test Script
 
 ```bash
 export CLUSTER_DOMAIN="cluster-thmg4.thmg4.sandbox4076.opentlc.com"
@@ -1401,171 +1401,163 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 ./observability/run-tests.sh all
 ```
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `./observability/run-tests.sh all` | Ejecuta dev, test y prod |
-| `./observability/run-tests.sh dev` | Solo dev (sin API key) |
-| `./observability/run-tests.sh test` | Solo test (con API_KEY_TEST) |
-| `./observability/run-tests.sh prod` | Solo prod (con API_KEY_PROD) |
-| `./observability/run-tests.sh loop` | Loop continuo: dev + test + prod |
+| `./observability/run-tests.sh all` | Run dev, test and prod |
+| `./observability/run-tests.sh dev` | Dev only (no API key) |
+| `./observability/run-tests.sh test` | Test only (with API_KEY_TEST) |
+| `./observability/run-tests.sh prod` | Prod only (with API_KEY_PROD) |
+| `./observability/run-tests.sh loop` | Continuous loop: dev + test + prod |
 
-**Métricas agregadas (Grafana):** El dashboard "NFL Wallet – All environments" permite comparar el comportamiento de los tres ambientes (dev/test/prod) en un solo panel. Al ejecutar el script con `loop`, se genera tráfico continuo que alimenta las métricas de request rate, response codes y duración.
+**Aggregated metrics (Grafana):** The "Stadium Wallet – All environments" dashboard allows comparing the behavior of all three environments (dev/test/prod) in a single panel. When running the script with `loop`, continuous traffic is generated that feeds the request rate, response codes, and duration metrics.
 
 [![Grafana Dashboard]({{ '/images/grafana-dashboard.png' | relative_url }})]({{ '/images/grafana-dashboard.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Dashboard de Grafana "NFL Wallet – All environments" con métricas: request rate, response codes, duration, error rate.</span>
+<span class="img-caption">Grafana "Stadium Wallet – All environments" dashboard with metrics: request rate, response codes, duration, error rate.</span>
 
-**Topología del mesh (Kiali):** Kiali visualiza en tiempo real las relaciones entre servicios dentro del mesh. Los nodos representan workloads y los bordes representan tráfico observado. Los colores indican el estado de salud: verde (saludable), amarillo (degradado), rojo (errores). Esto permite identificar rápidamente qué servicio está generando errores o recibiendo tráfico inesperado.
+**Mesh topology (Kiali):** Kiali visualizes service relationships within the mesh in real time. Nodes represent workloads and edges represent observed traffic. Colors indicate health status: green (healthy), yellow (degraded), red (errors). This enables quick identification of which service is generating errors or receiving unexpected traffic.
 
 [![Kiali Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Topología del Service Mesh federado mostrando flujo de tráfico entre namespaces (dev/test/prod).</span>
+<span class="img-caption">Kiali — Federated Service Mesh topology showing traffic flow across namespaces (dev/test/prod).</span>
 
-**Tráfico multi-cluster (Kiali):** En la configuración con ACM, Kiali muestra el grafo de servicios federado entre los clústeres East y West, incluyendo los gateways Istio y los waypoints. Esto permite verificar que el tráfico cross-cluster fluye correctamente a través del túnel HBONE.
+**Multi-cluster traffic (Kiali):** In the ACM configuration, Kiali displays the federated service graph between East and West clusters, including Istio gateways and waypoints. This enables verification that cross-cluster traffic flows correctly through the HBONE tunnel.
 
 [![Kiali Service Graph]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-cluster (East/West), gateways y waypoints.</span>
+<span class="img-caption">Kiali — Multi-cluster service graph with East/West traffic, gateways and waypoints.</span>
 
 ---
 
-# 12. Capturas de Pantalla {#capturas}
+# 12. Screenshots {#screenshots}
 
-## 12.1 Aplicación Wallet
+## 12.1 Wallet Application
 
 [![Wallet Landing]({{ '/images/walletlanding.png' | relative_url }})]({{ '/images/walletlanding.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Wallet Landing Page — Punto de entrada de la aplicación web NFL Stadium Wallet.</span>
+<span class="img-caption">Wallet Landing Page — Entry point of the Stadium Wallet web application.</span>
 
 [![Customer List]({{ '/images/wallet.png' | relative_url }})]({{ '/images/wallet.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Lista de Clientes — Seleccionar un cliente para ver sus wallets por equipo.</span>
+<span class="img-caption">Customer List — Select a customer to view their team wallets.</span>
 
 [![Wallet Balances]({{ '/images/wallet2.png' | relative_url }})]({{ '/images/wallet2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Balances de Wallets — Buffalo Bills y Las Vegas Raiders: saldos y transacciones.</span>
+<span class="img-caption">Wallet Balances — Buffalo Bills and Las Vegas Raiders: balances and transactions.</span>
 
 [![QR Payment]({{ '/images/wallet3.png' | relative_url }})]({{ '/images/wallet3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Flujo de Pago QR — Pago desde una wallet de equipo.</span>
+<span class="img-caption">QR Payment Flow — Payment from a team wallet.</span>
 
 [![Load Balance]({{ '/images/wallet4.png' | relative_url }})]({{ '/images/wallet4.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Carga de Saldo — Agregar fondos a una wallet de equipo.</span>
+<span class="img-caption">Load Balance — Add funds to a team wallet.</span>
 
-## 12.2 Plataforma y Observabilidad
+## 12.2 Platform & Observability
 
-**Dashboards de métricas:** Grafana agrega las métricas emitidas por los Waypoint Proxies y ztunnel, permitiendo monitorear request rate, response codes, duración y error rate para cada ambiente. El dashboard utiliza la variable `namespace` para filtrar entre dev, test y prod.
+**Metrics dashboards:** Grafana aggregates metrics emitted by Waypoint Proxies and ztunnel, enabling monitoring of request rate, response codes, duration, and error rate per environment. The dashboard uses the `namespace` variable to filter between dev, test, and prod.
 
 [![Grafana Dashboard]({{ '/images/grafana-dashboard.png' | relative_url }})]({{ '/images/grafana-dashboard.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Grafana — Dashboard "NFL Wallet – All environments": request rate, response codes, duration, error rate por ambiente.</span>
+<span class="img-caption">Grafana — "Stadium Wallet – All environments" dashboard: request rate, response codes, duration, error rate by environment.</span>
 
-**Topología y tráfico del mesh:** Kiali proporciona visualización en tiempo real del grafo de servicios dentro del mesh. Los nodos representan workloads y los bordes muestran tráfico HTTP observado con tasas de éxito/error. Esto permite diagnosticar problemas de conectividad sin necesidad de inspeccionar logs individuales.
+**Mesh topology and traffic:** Kiali provides real-time visualization of the service graph within the mesh. Nodes represent workloads and edges show observed HTTP traffic with success/error rates. This enables diagnosing connectivity issues without inspecting individual logs.
 
 [![Service Mesh Grafana]({{ '/images/service-mesh-grafana.png' | relative_url }})]({{ '/images/service-mesh-grafana.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Grafo de servicios con tráfico multi-namespace (dev/test/prod) y métricas HTTP.</span>
+<span class="img-caption">Kiali — Service graph with multi-namespace traffic (dev/test/prod) and HTTP metrics.</span>
 
 [![Kiali Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Topología detallada del Service Mesh con leyenda de nodos, workloads y servicios.</span>
+<span class="img-caption">Kiali — Detailed Service Mesh topology with node legend, workloads and services.</span>
 
 [![Kiali Multi-Cluster]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Service Graph multi-cluster mostrando tráfico entre East y West con gateways Istio.</span>
+<span class="img-caption">Kiali — Multi-cluster Service Graph showing traffic between East and West with Istio gateways.</span>
 
-**Administración del mesh desde OpenShift Console:** La vista integrada de Service Mesh en OpenShift Console muestra los control planes, gateways y waypoints activos, proporcionando un overview operativo sin salir de la consola de administración.
+**Mesh management from OpenShift Console:** The integrated Service Mesh view in OpenShift Console shows active control planes, gateways, and waypoints, providing an operational overview without leaving the management console.
 
 [![Service Mesh Overview]({{ '/images/service-mesh.png' | relative_url }})]({{ '/images/service-mesh.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">OpenShift Console — Vista del Service Mesh: control planes, gateways, waypoints y componentes.</span>
+<span class="img-caption">OpenShift Console — Service Mesh view: control planes, gateways, waypoints and components.</span>
 
-**APIs expuestas:** Las APIs de NFL Wallet se documentan automáticamente via OpenAPI (Swagger). Cada microservicio expone su especificación, que luego RHDH descubre y registra en el catálogo de Backstage.
+**Exposed APIs:** Stadium Wallet APIs are automatically documented via OpenAPI (Swagger). Each microservice exposes its specification, which RHDH then discovers and registers in the Backstage catalog.
 
 [![API Customers]({{ '/images/api-customers.png' | relative_url }})]({{ '/images/api-customers.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">API Customers — Swagger UI del servicio de clientes.</span>
+<span class="img-caption">API Customers — Swagger UI for the customers service.</span>
 
 [![API Bills]({{ '/images/api-bills.png' | relative_url }})]({{ '/images/api-bills.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">API Bills — Swagger UI del servicio de Buffalo Bills wallet.</span>
+<span class="img-caption">API Bills — Swagger UI for the Buffalo Bills wallet service.</span>
 
-## 12.5 Red Hat Developer Hub — Plugin Kuadrant {#rhdh-screenshots}
+## 12.5 Red Hat Developer Hub — Kuadrant Plugin {#rhdh-screenshots}
 
-**Portal de autoservicio para desarrolladores:** Las siguientes capturas muestran el flujo completo dentro de RHDH: desde el descubrimiento de la API y sus políticas, hasta la solicitud de acceso y la obtención de credenciales. Este flujo reemplaza el proceso manual de crear tickets y esperar aprovisionamiento — el desarrollador obtiene su API Key en minutos, con el Tier de rate limiting ya configurado.
+**Developer self-service portal:** The following screenshots show the complete flow within RHDH: from discovering the API and its policies, to requesting access and obtaining credentials. This flow replaces the manual process of creating tickets and waiting for provisioning — developers obtain their API Key in minutes, with rate limiting tiers already configured.
 
 [![RHDH Policies]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }})]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Policies: PlanPolicy y AuthPolicy descubiertas para nfl-wallet-api-customers. Tiers efectivos: gold (1000/día), silver (500/día), bronze (100/día).</span>
+<span class="img-caption">RHDH Kuadrant Plugin — Policies tab: PlanPolicy and AuthPolicy discovered for nfl-wallet-api-customers. Effective tiers: gold (1000/day), silver (500/day), bronze (100/day).</span>
 
 [![RHDH API Definition]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Pestaña Definition: NFL Wallet - Customers API v1 (OAS 3.0) con endpoints documentados y selector de servidor por ambiente.</span>
+<span class="img-caption">RHDH Kuadrant Plugin — Definition tab: Stadium Wallet - Customers API v1 (OAS 3.0) with documented endpoints and per-environment server selector.</span>
 
 [![RHDH Request Access]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }})]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Modal de solicitud de acceso: selección de Tier silver (500 per daily), campo de Use Case y botón Submit Request.</span>
+<span class="img-caption">RHDH Kuadrant Plugin — Access request modal: Silver tier selection (500 per daily), Use Case field and Submit Request button.</span>
 
 [![RHDH API Keys]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — API Keys aprovisionadas con Tier silver aprobado, clave generada y ejemplos de código en cURL, Node.js, Python y Go.</span>
+<span class="img-caption">RHDH Kuadrant Plugin — Provisioned API Keys with approved Silver tier, generated key and code examples in cURL, Node.js, Python and Go.</span>
 
-**Observabilidad multi-cluster con ACM:** ACM no solo gestiona el despliegue de workloads sino también la infraestructura de observabilidad. El ApplicationSet `observability-east-west` despliega Grafana, dashboards, datasources y routes de forma idéntica en ambos clústeres, garantizando que la experiencia de monitoreo sea consistente independientemente de dónde se ejecuten los servicios.
+**Multi-cluster observability with ACM:** ACM manages not only workload deployment but also the observability infrastructure. The `observability-east-west` ApplicationSet deploys Grafana, dashboards, datasources, and routes identically on both clusters, ensuring a consistent monitoring experience regardless of where services run.
 
 [![ACM Observability]({{ '/images/acm-observability-east-west.png' | relative_url }})]({{ '/images/acm-observability-east-west.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — ApplicationSet observability-east-west: topología con Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace y Route para observabilidad centralizada.</span>
+<span class="img-caption">ACM — ApplicationSet observability-east-west: topology with Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace and Route for centralized observability.</span>
 
 [![Grafana Multi-Cluster]({{ '/images/grafana-multi-cluster.png' | relative_url }})]({{ '/images/grafana-multi-cluster.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Grafana Multi-Cluster — Dashboard "NFL Wallet - All environments" con filtro por cluster (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate y request rate por servicio.</span>
+<span class="img-caption">Grafana Multi-Cluster — "Stadium Wallet - All environments" dashboard with cluster filter (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate and request rate by service.</span>
 
-**GitOps y gestión de clústeres:** ArgoCD reconcilia el estado declarado en Git con el estado real de cada clúster. ACM complementa esto proporcionando la vista de topología del hub y los managed clusters, y el estado de cada Application distribuida.
+**GitOps and cluster management:** ArgoCD reconciles the state declared in Git with the actual state of each cluster. ACM complements this by providing the hub and managed clusters topology view, and the status of each distributed Application.
 
 [![GitOps ArgoCD]({{ '/images/gitops.png' | relative_url }})]({{ '/images/gitops.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications y estado de sincronización.</span>
+<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications and sync status.</span>
 
 [![ACM Topology]({{ '/images/ACM3.png' | relative_url }})]({{ '/images/ACM3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Topología con hub y managed clusters (East, West).</span>
+<span class="img-caption">ACM — Topology with hub and managed clusters (East, West).</span>
 
 [![ACM Applications]({{ '/images/ACM4.png' | relative_url }})]({{ '/images/ACM4.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — ApplicationSet y las 6 Applications generadas.</span>
+<span class="img-caption">ACM — ApplicationSet and the 6 generated Applications.</span>
 
 [![ACM Overview]({{ '/images/ACM.png' | relative_url }})]({{ '/images/ACM.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Vista general del Advanced Cluster Management.</span>
+<span class="img-caption">ACM — Advanced Cluster Management overview.</span>
 
 [![ACM Detail]({{ '/images/ACM2.png' | relative_url }})]({{ '/images/ACM2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Detalle de clústeres managed y su estado.</span>
+<span class="img-caption">ACM — Managed clusters detail and status.</span>
 
-**Métricas y trazas detalladas:** El stack de observabilidad proporciona múltiples niveles de detalle: desde métricas agregadas del gateway (request rate, error rate) hasta trazas distribuidas individuales que muestran el recorrido completo de una request a través de los servicios. Esto permite investigar problemas desde lo general (¿hay un aumento de errores?) hasta lo específico (¿qué request falló y en qué servicio?).
+**Detailed metrics and traces:** The observability stack provides multiple levels of detail: from aggregated gateway metrics (request rate, error rate) to individual distributed traces showing the complete path of a request through services. This enables investigating issues from the general (is there an increase in errors?) to the specific (which request failed and on which service?).
 
 [![Observability]({{ '/images/observability.png' | relative_url }})]({{ '/images/observability.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Observabilidad — Consola OpenShift con métricas del monitoring stack.</span>
+<span class="img-caption">Observability — OpenShift console with monitoring stack metrics.</span>
 
 [![Observability Metrics]({{ '/images/observability2.png' | relative_url }})]({{ '/images/observability2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Métricas del gateway (request rate, success y error rates) disponibles tras configurar PodMonitor/ServiceMonitor.</span>
+<span class="img-caption">Gateway metrics (request rate, success and error rates) available after PodMonitor/ServiceMonitor configuration.</span>
 
 [![Observability Detail]({{ '/images/observability3.png' | relative_url }})]({{ '/images/observability3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Vista detallada de observabilidad con métricas Istio/Envoy del gateway NFL-Wallet.</span>
+<span class="img-caption">Detailed observability view with Istio/Envoy metrics for the Stadium Wallet gateway.</span>
 
-**Análisis de tráfico y trazas distribuidas:** Las trazas distribuidas (via TempoStack/Jaeger) muestran el tiempo que cada hop toma dentro de una request, permitiendo identificar cuellos de botella. El análisis de tráfico complementa las trazas con una vista de flujo de requests, latencia y distribución de códigos de respuesta.
+**Traffic analysis and distributed traces:** Distributed traces (via TempoStack/Jaeger) show the time each hop takes within a request, enabling bottleneck identification. Traffic analysis complements traces with a request flow view, latency, and response code distribution.
 
 [![Traffic Analysis]({{ '/images/traffic-analysis.png' | relative_url }})]({{ '/images/traffic-analysis.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Análisis de tráfico — Flujo de requests, latencia y códigos de respuesta.</span>
+<span class="img-caption">Traffic Analysis — Request flow, latency and response codes.</span>
 
 [![Jaeger Traces]({{ '/images/jaeger-traces.png' | relative_url }})]({{ '/images/jaeger-traces.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Jaeger — Trazas distribuidas de los servicios del NFL Wallet.</span>
-
-**Diagramas de arquitectura:** Los diagramas de alto nivel muestran el ecosistema completo de NFL Wallet — desde el flujo GitOps hasta la interacción entre los componentes de la plataforma (Gateway API, Service Mesh, ACM, Observability).
-
-[![Architecture Workflow]({{ '/images/architecture-workflow.png' | relative_url }})]({{ '/images/architecture-workflow.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Diagrama de workflow de la arquitectura GitOps completa.</span>
-
-[![High Level Architecture]({{ '/images/high-level-architecture.png' | relative_url }})]({{ '/images/high-level-architecture.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Arquitectura de alto nivel del ecosistema NFL Wallet.</span>
+<span class="img-caption">Jaeger — Distributed traces for Stadium Wallet services.</span>
 
 ---
 
 # 12.3 Canary / Blue-Green Deployments {#canary}
 
-El overlay de producción incluye una **Route canary** adicional (`nfl-wallet-canary.apps.<cluster-domain>`) que apunta al mismo gateway Service (`nfl-wallet-gateway-istio`), permitiendo tráfico blue/green cuando el chart crea el HTTPRoute correspondiente.
+The production overlay includes an additional **canary Route** (`nfl-wallet-canary.apps.<cluster-domain>`) that points to the same gateway Service (`nfl-wallet-gateway-istio`), enabling blue/green traffic when the chart creates the corresponding HTTPRoute.
 
-### Métricas de Canary por Ambiente
+### Canary Metrics by Environment
 
-Las siguientes capturas de Grafana muestran el comportamiento del tráfico durante un despliegue canary, donde se observa la distribución de requests entre los ambientes dev, test y prod:
+The following Grafana screenshots show traffic behavior during a canary deployment, showing the request distribution between dev, test and prod environments:
 
 [![Canary Blue-Green - Total Requests]({{ '/images/canary-blue-green.png' | relative_url }})]({{ '/images/canary-blue-green.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Total de requests (última hora) por ambiente durante un despliegue canary — nfl-wallet-dev (verde), nfl-wallet-prod (amarillo), nfl-wallet-test (azul). Se observa el incremento gradual de tráfico hacia producción.</span>
+<span class="img-caption">Total requests (last hour) by environment during a canary deployment — nfl-wallet-dev (green), nfl-wallet-prod (yellow), nfl-wallet-test (blue). The gradual traffic increase to production is visible.</span>
 
 [![Canary Blue-Green - Request Rate]({{ '/images/canary-blue-green-2.png' | relative_url }})]({{ '/images/canary-blue-green-2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Request rate por ambiente y servicio durante canary — Se visualiza cómo api-customers (dev), gateway-istio (prod/test) y webapp distribuyen el tráfico entre versiones.</span>
+<span class="img-caption">Request rate by environment and service during canary — Shows how api-customers (dev), gateway-istio (prod/test) and webapp distribute traffic between versions.</span>
 
-### Definición del Canary con HTTPRoutes
+### Canary Definition with HTTPRoutes
 
-El despliegue canary se implementa mediante **dos HTTPRoutes** que apuntan al mismo Gateway pero con hostnames distintos. Esto permite dividir el tráfico entre la versión estable (producción) y la versión canary:
+Canary deployments are implemented using **two HTTPRoutes** pointing to the same Gateway but with different hostnames. This allows splitting traffic between the stable version (production) and the canary version:
 
 ```yaml
-# HTTPRoute principal (producción estable)
+# Main HTTPRoute (stable production)
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -1584,11 +1576,11 @@ spec:
     backendRefs:
     - name: webapp
       port: 5173
-      weight: 100      # 100% del tráfico estable
+      weight: 100      # 100% stable traffic
 ```
 
 ```yaml
-# HTTPRoute canary (nueva versión)
+# Canary HTTPRoute (new version)
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -1605,12 +1597,12 @@ spec:
         type: PathPrefix
         value: /
     backendRefs:
-    - name: webapp-canary        # Service de la versión canary
+    - name: webapp-canary        # Canary version Service
       port: 5173
       weight: 100
 ```
 
-Para un **weighted canary** (porcentaje de tráfico en el mismo hostname), se usa un único HTTPRoute con múltiples `backendRefs`:
+For a **weighted canary** (percentage-based traffic on the same hostname), use a single HTTPRoute with multiple `backendRefs`:
 
 ```yaml
 apiVersion: gateway.networking.k8s.io/v1
@@ -1629,23 +1621,23 @@ spec:
         type: PathPrefix
         value: /
     backendRefs:
-    - name: webapp               # Versión estable
+    - name: webapp               # Stable version
       port: 5173
-      weight: 90                 # 90% del tráfico
-    - name: webapp-canary        # Versión canary
+      weight: 90                 # 90% of traffic
+    - name: webapp-canary        # Canary version
       port: 5173
-      weight: 10                 # 10% del tráfico
+      weight: 10                 # 10% of traffic
 ```
 
-### Configuración en Kustomize
+### Kustomize Configuration
 
-La ruta canary se define en los overlays de Kustomize para producción:
+The canary route is defined in the Kustomize overlays for production:
 
-- **Path:** `nfl-wallet/overlays/prod/kustomization.yaml` (y `prod-east`, `prod-west`)
+- **Path:** `nfl-wallet/overlays/prod/kustomization.yaml` (and `prod-east`, `prod-west`)
 - **Host:** `nfl-wallet-canary.apps.<cluster-domain>`
-- **Target:** Mismo gateway Service `nfl-wallet-gateway-istio`
+- **Target:** Same gateway Service `nfl-wallet-gateway-istio`
 
-El overlay de producción incluye el Route de OpenShift para el canary host:
+The production overlay includes the OpenShift Route for the canary host:
 
 ```yaml
 # nfl-wallet/overlays/prod/canary-route.yaml
@@ -1664,86 +1656,86 @@ spec:
     insecureEdgeTerminationPolicy: Redirect
 ```
 
-Para cambiar el dominio, editar el patch en cada overlay correspondiente.
+To change the domain, edit the patch in each corresponding overlay.
 
 ---
 
-# 13. Plan de Pruebas y Validación (QA) {#pruebas}
+# 13. Test Plan & Validation (QA) {#testing}
 
-Una vez finalizada la sincronización de ArgoCD, el equipo de QA u Operaciones debe ejecutar el siguiente plan de pruebas para certificar el despliegue.
+Once ArgoCD synchronization is complete, the QA or Operations team must execute the following test plan to certify the deployment.
 
-## 13.1 Matriz de Pruebas
+## 13.1 Test Matrix
 
-| ID | Componente | Descripción de la Prueba | Criterio de Éxito | Estado |
-|----|------------|--------------------------|-------------------|--------|
-| QA-01 | GitOps Sync | Verificar en la UI de ArgoCD que la aplicación `nfl-wallet` esté en estado **Healthy** y **Synced** | Todos los recursos en verde; pods en estado `Running` | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-02 | Ambient Mesh | Ejecutar `oc get pods -n nfl-wallet`. Confirmar que los pods tienen solo 1 contenedor (sin sidecar) | Pods muestran `1/1 READY` | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-03 | Egress (ESPN) | Acceder al pod del frontend o invocar `/api/bills/scoreboard` | JSON válido con los scores de la NFL proveídos por ESPN | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-04 | RHDH Portal | Navegar a Developer Hub, buscar `nfl-wallet-api-customers` y visualizar la documentación OpenAPI | La especificación Swagger/OpenAPI renderiza correctamente | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-05 | Rate Limiting | Generar una API Key temporal (Tier Silver). Realizar un bucle de 505 peticiones HTTP GET a `/api/customers` | La petición 501 debe devolver **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-06 | AuthPolicy | Enviar request sin `X-API-Key` al endpoint `/api-bills` (test/prod) | Respuesta **HTTP 403** con JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-07 | Cross-Cluster | Desde webapp (East), consultar balance de un cliente que agrega `api-bills` (East) y `api-raiders` (West) | UI muestra saldos de ambos equipos correctamente | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-08 | Observabilidad | Verificar en Grafana que las métricas `istio_requests_total` se reciben de ambos clústeres | Dashboard muestra datos de East y West | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-09 | Swagger UI | Navegar a `/api/swagger` de cada API (api-customers, api-bills, api-raiders) | Swashbuckle UI renderiza correctamente con endpoints documentados | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-10 | Load Test | Ejecutar `./generate-traffic-realistic.sh --workers 20 --interval 1` | RateLimitPolicies enforcen cuota de 100 req/min; tráfico excedente recibe 429 | <span class="rh-tag rh-tag--gold">Pendiente</span> |
+| ID | Component | Test Description | Success Criteria | Status |
+|----|-----------|-----------------|-----------------|--------|
+| QA-01 | GitOps Sync | Verify in ArgoCD UI that `nfl-wallet` application is **Healthy** and **Synced** | All resources green; pods in `Running` state | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-02 | Ambient Mesh | Run `oc get pods -n nfl-wallet`. Confirm pods have only 1 container (no sidecar) | Pods show `1/1 READY` | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-03 | Egress (ESPN) | Access frontend pod or invoke `/api/bills/scoreboard` | Valid JSON with scores from ESPN | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-04 | RHDH Portal | Navigate to Developer Hub, search `nfl-wallet-api-customers` and view OpenAPI docs | Swagger/OpenAPI spec renders correctly | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-05 | Rate Limiting | Generate a temp API Key (Silver Tier). Loop 505 HTTP GET requests to `/api/customers` | Request 501 must return **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-06 | AuthPolicy | Send request without `X-API-Key` to `/api-bills` endpoint (test/prod) | Response **HTTP 403** with JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-07 | Cross-Cluster | From webapp (East), query a customer's balance aggregating `api-bills` (East) and `api-raiders` (West) | UI displays balances from both teams correctly | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-08 | Observability | Verify in Grafana that `istio_requests_total` metrics are received from both clusters | Dashboard shows data from East and West | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-09 | Swagger UI | Navigate to `/api/swagger` for each API (api-customers, api-bills, api-raiders) | Swashbuckle UI renders correctly with documented endpoints | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-10 | Load Test | Run `./generate-traffic-realistic.sh --workers 20 --interval 1` | RateLimitPolicies enforce 100 req/min quota; excess traffic gets 429 | <span class="rh-tag rh-tag--gold">Pending</span> |
 
-## 13.2 Script de Prueba de Rate Limiting (QA-05)
+## 13.2 Rate Limiting Test Script (QA-05)
 
 ```bash
-# Validar el límite Silver (500/día)
+# Validate Silver limit (500/day)
 for i in {1..505}; do
   STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: Bearer $API_KEY" \
-    https://api.nfl-wallet.midominio.com/api/customers)
-  echo "Petición $i: Código HTTP $STATUS_CODE"
+    https://api.nfl-wallet.mydomain.com/api/customers)
+  echo "Request $i: HTTP Code $STATUS_CODE"
 done
-# Las últimas 5 peticiones deben mostrar "Código HTTP 429"
+# Last 5 requests should show "HTTP Code 429"
 ```
 
-## 13.3 Verificación de API y Tráfico
+## 13.3 API & Traffic Verification
 
 ```bash
-# Health check de las tres APIs
+# Health check for all three APIs
 scripts/test-apis.sh
 
-# Documentación interactiva
-# Navegar a: https://<api-customers-route>/api/swagger
+# Interactive documentation
+# Navigate to: https://<api-customers-route>/api/swagger
 
-# Simulación de carga (20 workers concurrentes)
+# Load simulation (20 concurrent workers)
 ./generate-traffic-realistic.sh --workers 20 --interval 1
 ```
 
-## 13.4 Verificación UI (Cross-Cluster)
+## 13.4 UI Verification (Cross-Cluster)
 
-1. **Customer List:** Verificar que el frontend recibe la lista de clientes desde `api-customers`
-2. **Cross-Cluster Balance:** Seleccionar un perfil y verificar que la UI agrega saldos de `api-bills` (East) y `api-raiders` (West) — confirma la federación cross-cluster
+1. **Customer List:** Verify the frontend successfully receives the customer list from `api-customers`
+2. **Cross-Cluster Balance:** Select a profile and verify the UI aggregates balances from `api-bills` (East) and `api-raiders` (West) — confirms the cross-cluster federation backbone
 
 ---
 
-# 14. Referencia de API {#api-reference}
+# 14. API Reference {#api-reference}
 
-| Servicio | Puerto (Service) | Puerto (Pod) | Path API | Documentación |
-|----------|------------------|-------------|----------|---------------|
+| Service | Service Port | Pod Port | API Path | Documentation |
+|---------|-------------|----------|----------|---------------|
 | api-customers | 8080 | 8080 | `/api` | `/api/swagger` |
 | api-bills | 8081 | 8080 | `/api` | `/api/swagger` |
 | api-raiders | 8082 | 8080 | `/api` | `/api/swagger` |
 | webapp | 5173 | 8080 | `/` | N/A |
-| Kiali Dashboard | 443 | N/A | `/` | Hub Centralizado |
-| Grafana | 443 | N/A | `/` | Hub Centralizado |
+| Kiali Dashboard | 443 | N/A | `/` | Centralized Hub |
+| Grafana | 443 | N/A | `/` | Centralized Hub |
 
-### URLs por Ambiente
+### URLs by Environment
 
-| Ambiente | Patrón de Host | Ejemplo |
-|----------|----------------|---------|
+| Environment | Host Pattern | Example |
+|-------------|-------------|---------|
 | Dev | `nfl-wallet-dev.apps.<clusterDomain>` | `nfl-wallet-dev.apps.cluster-thmg4...opentlc.com` |
 | Test | `nfl-wallet-test.apps.<clusterDomain>` | `nfl-wallet-test.apps.cluster-thmg4...opentlc.com` |
 | Prod | `nfl-wallet-prod.apps.<clusterDomain>` | `nfl-wallet-prod.apps.cluster-thmg4...opentlc.com` |
 
-### API Keys por Ambiente
+### API Keys by Environment
 
-| Ambiente | Key (customers) | Header |
-|----------|-----------------|--------|
-| Dev | No requerida | — |
+| Environment | Key (customers) | Header |
+|-------------|-----------------|--------|
+| Dev | Not required | — |
 | Test | `nfl-wallet-customers-key` | `X-Api-Key` |
 | Prod | `nfl-wallet-customers-key` | `X-Api-Key` |
 
@@ -1751,39 +1743,39 @@ scripts/test-apis.sh
 
 # 15. Troubleshooting {#troubleshooting}
 
-## Pods no se comunican (Error 503)
+## Pods Cannot Communicate (Error 503)
 
-**Causa:** Componentes del dataplane de Ambient Mode inestables.
+**Cause:** Ambient mode dataplane components are unstable.
 
 ```bash
-# Reiniciar CNI pods
+# Restart CNI pods
 oc -n istio-cni delete pod -l k8s-app=istio-cni-node
 
-# Reiniciar ztunnel
+# Restart ztunnel
 oc -n ztunnel delete pod -l app=ztunnel
 ```
 
-## ArgoCD indica "Out of Sync"
+## ArgoCD Shows "Out of Sync"
 
-**Causa:** Alguien modificó un recurso directamente en el clúster.
+**Cause:** Someone modified a resource directly on the cluster.
 
-**Solución:** Forzar sincronización en ArgoCD → Sync → Replace.
+**Solution:** Force sync in ArgoCD → Sync → Replace.
 
 ## HTTP 403 Forbidden
 
-**Causa:** AuthPolicy activa pero no se envía la API Key, o el acceso está pendiente de aprobación en RHDH.
+**Cause:** AuthPolicy active but API Key not sent, or access pending approval in RHDH.
 
-**Solución:** Verificar el header `X-API-Key` en las peticiones. Revisar estado de aprobación en Developer Hub.
+**Solution:** Verify `X-API-Key` header in requests. Check approval status in Developer Hub.
 
-## HTTP 500 en /api-bills con AuthPolicy
+## HTTP 500 on /api-bills with AuthPolicy
 
-**Causa:** AuthConfig en `istio-system` no está correctamente vinculado al host del gateway.
+**Cause:** AuthConfig in `istio-system` not correctly linked to gateway host.
 
 ```bash
-# Verificar AuthConfig
+# Verify AuthConfig
 kubectl get authconfig -n istio-system
 
-# Parchear el host si es necesario
+# Patch host if needed
 kubectl patch authconfig <HASH> -n istio-system \
   --type=json -p='[{"op":"replace","path":"/spec/hosts","value":["<gateway-host>"]}]'
 ```
@@ -1796,41 +1788,41 @@ oc get csr | grep Pending | awk '{print $1}' | xargs oc adm certificate approve
 
 ## CORS Failure (Frontend/Backend)
 
-**Solución:** Asegurar que `CORS__AllowedOrigins` en los deployments de API coincide con la URL pública de la webapp.
+**Solution:** Ensure `CORS__AllowedOrigins` in API deployments matches the webapp's public URL.
 
-- **Desarrollo:** `*` (wildcard)
-- **Producción:** URL HTTPS específica del frontend
+- **Development:** `*` (wildcard)
+- **Production:** Specific frontend HTTPS URL
 
 ## HTTP 503 "Application is not available"
 
-- Con **ACM:** Usar el dominio del managed cluster (east/west), no el hub
-- Verificar Route: `oc get route -n nfl-wallet-prod`
-- Verificar pods: `oc get pods -n nfl-wallet-prod`
+- With **ACM:** Use the managed cluster domain (east/west), not the hub
+- Verify Route: `oc get route -n nfl-wallet-prod`
+- Verify pods: `oc get pods -n nfl-wallet-prod`
 
-## Sin datos en Grafana
+## No Data in Grafana
 
-1. Generar tráfico: `./observability/run-tests.sh loop`
-2. Verificar Prometheus targets (Status → Targets)
-3. Verificar labels de Service: `kubectl get svc -n nfl-wallet-prod -l gateway.networking.k8s.io/gateway-name`
-4. En Grafana Explore, ejecutar `istio_requests_total`
+1. Generate traffic: `./observability/run-tests.sh loop`
+2. Verify Prometheus targets (Status → Targets)
+3. Verify Service labels: `kubectl get svc -n nfl-wallet-prod -l gateway.networking.k8s.io/gateway-name`
+4. In Grafana Explore, run `istio_requests_total`
 
 ---
 
-# 16. Publicar en Artifact Hub {#artifact-hub}
+# 16. Publish to Artifact Hub {#artifact-hub}
 
 ```bash
-# 1. Empaquetar el chart
+# 1. Package the chart
 helm package helm/nfl-wallet --destination docs/
 
-# 2. Actualizar el índice del repo Helm
+# 2. Update the Helm repo index
 cd docs
 helm repo index . --url https://maximilianopizarro.github.io/NFL-Wallet --merge index.yaml
 cd ..
 
-# 3. Commit y push
+# 3. Commit and push
 ```
 
-Los usuarios pueden instalar:
+Users can install:
 
 ```bash
 helm repo add nfl-wallet https://maximilianopizarro.github.io/NFL-Wallet
@@ -1842,7 +1834,7 @@ helm install nfl-wallet nfl-wallet/nfl-wallet -n nfl-wallet
 
 <div style="text-align:center; margin-top:3rem; padding:2rem; background:var(--rh-gray-100); border-radius:4px;">
   <p style="font-size:0.9rem; color:var(--rh-gray-500);">
-    <strong>NFL Stadium Wallet v2.0</strong> — Documentación generada para GitHub Pages<br>
+    <strong>Stadium Wallet v2.0</strong> — Documentation generated for GitHub Pages<br>
     Stack: OpenShift 4.20+ · GitOps (ArgoCD) · OSSM 3.2 (Ambient Mode) · Kuadrant · Gateway API · RHDH · Vue.js · .NET 8<br>
     Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a> · Infra & Service Mesh: <a href="https://github.com/panchoraposo">Francisco Raposo</a>
   </p>

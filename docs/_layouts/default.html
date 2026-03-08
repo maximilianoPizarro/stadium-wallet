@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ page.lang | default: 'es' }}">
+<html lang="{{ page.lang | default: 'en' }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,36 +17,36 @@
   <header class="site-header">
     <div class="header-inner">
       <a href="{{ '/' | relative_url }}" class="site-brand">
-        <img class="rh-logo" src="{{ '/images/favicon.ico' | relative_url }}" alt="NFL Stadium Wallet" style="height:32px;width:32px;">
+        <img class="rh-logo" src="{{ '/images/favicon.ico' | relative_url }}" alt="Stadium Wallet" style="height:32px;width:32px;">
         <span class="site-title">{{ site.title }}</span>
       </a>
       <div class="header-right">
         <nav class="site-nav" id="mainNav">
-          {% if page.lang == 'en' %}
-          <a href="{{ '/en/' | relative_url }}" class="{% if page.url == '/en/' or page.url == '/en/index.html' %}active{% endif %}">Home</a>
-          <a href="{{ '/en/' | relative_url }}#architecture" class="nav-scroll">Architecture</a>
-          <a href="{{ '/en/' | relative_url }}#deployment" class="nav-scroll">Deployment</a>
-          <a href="{{ '/en/' | relative_url }}#service-mesh" class="nav-scroll">Service Mesh</a>
-          <a href="{{ '/en/' | relative_url }}#gitops" class="nav-scroll">GitOps</a>
-          <a href="{{ '/en/' | relative_url }}#observability" class="nav-scroll">Observability</a>
-          <a href="{{ '/en/' | relative_url }}#testing" class="nav-scroll">Testing</a>
+          {% if page.lang == 'es' %}
+          <a href="{{ '/es/' | relative_url }}" class="{% if page.url == '/es/' or page.url == '/es/index.html' %}active{% endif %}">Inicio</a>
+          <a href="{{ '/es/' | relative_url }}#arquitectura" class="nav-scroll">Arquitectura</a>
+          <a href="{{ '/es/' | relative_url }}#despliegue" class="nav-scroll">Despliegue</a>
+          <a href="{{ '/es/' | relative_url }}#service-mesh" class="nav-scroll">Service Mesh</a>
+          <a href="{{ '/es/' | relative_url }}#gitops" class="nav-scroll">GitOps</a>
+          <a href="{{ '/es/' | relative_url }}#observabilidad" class="nav-scroll">Observabilidad</a>
+          <a href="{{ '/es/' | relative_url }}#pruebas" class="nav-scroll">Pruebas</a>
           {% else %}
-          <a href="{{ '/' | relative_url }}" class="{% if page.url == '/' or page.url == '/index.html' %}active{% endif %}">Inicio</a>
-          <a href="{{ '/' | relative_url }}#arquitectura" class="nav-scroll">Arquitectura</a>
-          <a href="{{ '/' | relative_url }}#despliegue" class="nav-scroll">Despliegue</a>
+          <a href="{{ '/' | relative_url }}" class="{% if page.url == '/' or page.url == '/index.html' %}active{% endif %}">Home</a>
+          <a href="{{ '/' | relative_url }}#architecture" class="nav-scroll">Architecture</a>
+          <a href="{{ '/' | relative_url }}#deployment" class="nav-scroll">Deployment</a>
           <a href="{{ '/' | relative_url }}#service-mesh" class="nav-scroll">Service Mesh</a>
           <a href="{{ '/' | relative_url }}#gitops" class="nav-scroll">GitOps</a>
-          <a href="{{ '/' | relative_url }}#observabilidad" class="nav-scroll">Observabilidad</a>
-          <a href="{{ '/' | relative_url }}#pruebas" class="nav-scroll">Pruebas</a>
+          <a href="{{ '/' | relative_url }}#observability" class="nav-scroll">Observability</a>
+          <a href="{{ '/' | relative_url }}#testing" class="nav-scroll">Testing</a>
           {% endif %}
         </nav>
         <div class="lang-switch">
-          {% if page.lang == 'en' %}
-          <a href="{{ '/' | relative_url }}" title="Español">ES</a>
-          <span class="lang-active">EN</span>
-          {% else %}
+          {% if page.lang == 'es' %}
           <span class="lang-active">ES</span>
-          <a href="{{ '/en/' | relative_url }}" title="English">EN</a>
+          <a href="{{ '/' | relative_url }}" title="English">EN</a>
+          {% else %}
+          <a href="{{ '/es/' | relative_url }}" title="Español">ES</a>
+          <span class="lang-active">EN</span>
           {% endif %}
         </div>
         <a href="{{ site.github_repo }}" target="_blank" rel="noopener" class="gh-link" aria-label="GitHub">
@@ -68,11 +68,11 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <img class="rh-logo-footer" src="{{ '/images/favicon.ico' | relative_url }}" alt="NFL Stadium Wallet" style="height:28px;width:28px;">
-        <p>NFL Stadium Wallet v{{ site.version }} &mdash; {{ site.author }}</p>
+        <img class="rh-logo-footer" src="{{ '/images/favicon.ico' | relative_url }}" alt="Stadium Wallet" style="height:28px;width:28px;">
+        <p>Stadium Wallet v{{ site.version }} &mdash; {{ site.author }}</p>
       </div>
       <div class="footer-links">
-        <a href="{{ site.github_repo }}" target="_blank" rel="noopener">NFL-Wallet Repo</a>
+        <a href="{{ site.github_repo }}" target="_blank" rel="noopener">Stadium Wallet Repo</a>
         <a href="{{ site.github_gitops_repo }}" target="_blank" rel="noopener">GitOps Repo</a>
         <a href="https://github.com/panchoraposo/ossm3-ambient-mode" target="_blank" rel="noopener">OSSM3 Ambient Mode</a>
         <a href="https://artifacthub.io/packages/search?repo=nfl-wallet" target="_blank" rel="noopener">Artifact Hub</a>
