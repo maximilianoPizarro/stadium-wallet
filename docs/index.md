@@ -1540,16 +1540,16 @@ Once ArgoCD synchronization is complete, the QA or Operations team must execute 
 
 | ID | Component | Test Description | Success Criteria | Status |
 |----|-----------|-----------------|-----------------|--------|
-| QA-01 | GitOps Sync | Verify in ArgoCD UI that `nfl-wallet` application is **Healthy** and **Synced** | All resources green; pods in `Running` state | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-02 | Ambient Mesh | Run `oc get pods -n nfl-wallet`. Confirm pods have only 1 container (no sidecar) | Pods show `1/1 READY` | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-03 | Egress (ESPN) | Access frontend pod or invoke `/api/bills/scoreboard` | Valid JSON with scores from ESPN | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-04 | RHDH Portal | Navigate to Developer Hub, search `nfl-wallet-api-customers` and view OpenAPI docs | Swagger/OpenAPI spec renders correctly | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-05 | Rate Limiting | Generate a temp API Key (Silver Tier). Loop 505 HTTP GET requests to `/api/customers` | Request 501 must return **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-06 | AuthPolicy | Send request without `X-API-Key` to `/api-bills` endpoint (test/prod) | Response **HTTP 403** with JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-07 | Cross-Cluster | From webapp (East), query a customer's balance aggregating `api-bills` (East) and `api-raiders` (West) | UI displays balances from both teams correctly | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-08 | Observability | Verify in Grafana that `istio_requests_total` metrics are received from both clusters | Dashboard shows data from East and West | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-09 | Swagger UI | Navigate to `/api/swagger` for each API (api-customers, api-bills, api-raiders) | Swashbuckle UI renders correctly with documented endpoints | <span class="rh-tag rh-tag--gold">Pending</span> |
-| QA-10 | Load Test | Run `./generate-traffic-realistic.sh --workers 20 --interval 1` | RateLimitPolicies enforce 100 req/min quota; excess traffic gets 429 | <span class="rh-tag rh-tag--gold">Pending</span> |
+| QA-01 | GitOps Sync | Verify in ArgoCD UI that `nfl-wallet` application is **Healthy** and **Synced** | All resources green; pods in `Running` state | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-02 | Ambient Mesh | Run `oc get pods -n nfl-wallet`. Confirm pods have only 1 container (no sidecar) | Pods show `1/1 READY` | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-03 | Egress (ESPN) | Access frontend pod or invoke `/api/bills/scoreboard` | Valid JSON with scores from ESPN | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-04 | RHDH Portal | Navigate to Developer Hub, search `nfl-wallet-api-customers` and view OpenAPI docs | Swagger/OpenAPI spec renders correctly | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-05 | Rate Limiting | Generate a temp API Key (Silver Tier). Loop 505 HTTP GET requests to `/api/customers` | Request 501 must return **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-06 | AuthPolicy | Send request without `X-API-Key` to `/api-bills` endpoint (test/prod) | Response **HTTP 403** with JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-07 | Cross-Cluster | From webapp (East), query a customer's balance aggregating `api-bills` (East) and `api-raiders` (West) | UI displays balances from both teams correctly | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-08 | Observability | Verify in Grafana that `istio_requests_total` metrics are received from both clusters | Dashboard shows data from East and West | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-09 | Swagger UI | Navigate to `/api/swagger` for each API (api-customers, api-bills, api-raiders) | Swashbuckle UI renders correctly with documented endpoints | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-10 | Load Test | Run `./generate-traffic-realistic.sh --workers 20 --interval 1` | RateLimitPolicies enforce 100 req/min quota; excess traffic gets 429 | <span class="rh-tag rh-tag--green">Passed</span> |
 
 ## 13.2 Rate Limiting Test Script (QA-05)
 

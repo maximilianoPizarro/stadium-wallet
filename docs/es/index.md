@@ -1540,16 +1540,16 @@ Una vez finalizada la sincronización de ArgoCD, el equipo de QA u Operaciones d
 
 | ID | Componente | Descripción de la Prueba | Criterio de Éxito | Estado |
 |----|------------|--------------------------|-------------------|--------|
-| QA-01 | GitOps Sync | Verificar en la UI de ArgoCD que la aplicación `nfl-wallet` esté en estado **Healthy** y **Synced** | Todos los recursos en verde; pods en estado `Running` | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-02 | Ambient Mesh | Ejecutar `oc get pods -n nfl-wallet`. Confirmar que los pods tienen solo 1 contenedor (sin sidecar) | Pods muestran `1/1 READY` | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-03 | Egress (ESPN) | Acceder al pod del frontend o invocar `/api/bills/scoreboard` | JSON válido con los scores proveídos por ESPN | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-04 | RHDH Portal | Navegar a Developer Hub, buscar `nfl-wallet-api-customers` y visualizar la documentación OpenAPI | La especificación Swagger/OpenAPI renderiza correctamente | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-05 | Rate Limiting | Generar una API Key temporal (Tier Silver). Realizar un bucle de 505 peticiones HTTP GET a `/api/customers` | La petición 501 debe devolver **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-06 | AuthPolicy | Enviar request sin `X-API-Key` al endpoint `/api-bills` (test/prod) | Respuesta **HTTP 403** con JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-07 | Cross-Cluster | Desde webapp (East), consultar balance de un cliente que agrega `api-bills` (East) y `api-raiders` (West) | UI muestra saldos de ambos equipos correctamente | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-08 | Observabilidad | Verificar en Grafana que las métricas `istio_requests_total` se reciben de ambos clústeres | Dashboard muestra datos de East y West | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-09 | Swagger UI | Navegar a `/api/swagger` de cada API (api-customers, api-bills, api-raiders) | Swashbuckle UI renderiza correctamente con endpoints documentados | <span class="rh-tag rh-tag--gold">Pendiente</span> |
-| QA-10 | Load Test | Ejecutar `./generate-traffic-realistic.sh --workers 20 --interval 1` | RateLimitPolicies enforcen cuota de 100 req/min; tráfico excedente recibe 429 | <span class="rh-tag rh-tag--gold">Pendiente</span> |
+| QA-01 | GitOps Sync | Verificar en la UI de ArgoCD que la aplicación `nfl-wallet` esté en estado **Healthy** y **Synced** | Todos los recursos en verde; pods en estado `Running` | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-02 | Ambient Mesh | Ejecutar `oc get pods -n nfl-wallet`. Confirmar que los pods tienen solo 1 contenedor (sin sidecar) | Pods muestran `1/1 READY` | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-03 | Egress (ESPN) | Acceder al pod del frontend o invocar `/api/bills/scoreboard` | JSON válido con los scores proveídos por ESPN | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-04 | RHDH Portal | Navegar a Developer Hub, buscar `nfl-wallet-api-customers` y visualizar la documentación OpenAPI | La especificación Swagger/OpenAPI renderiza correctamente | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-05 | Rate Limiting | Generar una API Key temporal (Tier Silver). Realizar un bucle de 505 peticiones HTTP GET a `/api/customers` | La petición 501 debe devolver **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-06 | AuthPolicy | Enviar request sin `X-API-Key` al endpoint `/api-bills` (test/prod) | Respuesta **HTTP 403** con JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-07 | Cross-Cluster | Desde webapp (East), consultar balance de un cliente que agrega `api-bills` (East) y `api-raiders` (West) | UI muestra saldos de ambos equipos correctamente | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-08 | Observabilidad | Verificar en Grafana que las métricas `istio_requests_total` se reciben de ambos clústeres | Dashboard muestra datos de East y West | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-09 | Swagger UI | Navegar a `/api/swagger` de cada API (api-customers, api-bills, api-raiders) | Swashbuckle UI renderiza correctamente con endpoints documentados | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-10 | Load Test | Ejecutar `./generate-traffic-realistic.sh --workers 20 --interval 1` | RateLimitPolicies enforcen cuota de 100 req/min; tráfico excedente recibe 429 | <span class="rh-tag rh-tag--green">Passed</span> |
 
 ## 13.2 Script de Prueba de Rate Limiting (QA-05)
 
