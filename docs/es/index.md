@@ -95,7 +95,7 @@ Los microservicios interactúan con fuentes de datos externas (**API de ESPN**) 
 | Recurso | Descripción |
 |---------|-------------|
 | [Build a zero trust environment with Red Hat Connectivity Link](https://developers.redhat.com/articles/2026/02/12/build-zero-trust-environment-red-hat-connectivity-link) | Artículo en Red Hat Developer: arquitectura Zero Trust con OIDC/Keycloak y NeuralBank |
-| [Red Hat Connectivity Link — Documentación v1.2](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.2) | Documentación oficial del producto |
+| [Red Hat Connectivity Link — Documentación v1.3](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.3) | Documentación oficial del producto |
 | [Red Hat Connectivity Link — Producto](https://www.redhat.com/en/technologies/cloud-computing/connectivity-link) | Página de producto con overview y casos de uso |
 | [Kuadrant — Documentación](https://docs.kuadrant.io/) | Documentación del proyecto upstream (AuthPolicy, RateLimitPolicy, DNSPolicy) |
 | [Kuadrant — Proyecto](https://kuadrant.io/) | Sitio del proyecto open source |
@@ -506,7 +506,7 @@ En el contexto de Stadium Wallet, Connectivity Link orquesta:
 - **DNS** via DNSPolicy para failover multi-cluster con Route 53
 
 > **Documentación oficial:**
-> - [Red Hat Connectivity Link v1.2](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.2)
+> - [Red Hat Connectivity Link v1.3](https://docs.redhat.com/en/documentation/red_hat_connectivity_link/1.3)
 > - [Kuadrant — Documentación](https://docs.kuadrant.io/)
 > - [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift)
 
