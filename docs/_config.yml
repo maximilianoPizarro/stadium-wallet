@@ -2,7 +2,7 @@
 # Red Hat–inspired branding for GitHub Pages
 title: "Stadium Wallet"
 description: "Centralized digital wallet for stadiums — Architecture, GitOps, Service Mesh, Observability & Testing Guide"
-baseurl: "/nfl-wallet-docs"
+baseurl: "/stadium-wallet"
 url: "https://maximilianopizarro.github.io"
 github_repo: "https://github.com/maximilianopizarro/NFL-Wallet"
 github_gitops_repo: "https://github.com/maximilianoPizarro/nfl-wallet-gitops"
