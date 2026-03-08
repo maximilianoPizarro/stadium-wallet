@@ -984,7 +984,7 @@ Para lograr **alta disponibilidad geográfica** y failover automático entre los
 
 ```mermaid
 graph TD
-    DNS["Route 53 — DNS<br/>nfl-wallet.nfl.com<br/>Routing Policy: Failover / Weighted"]
+    DNS["Route 53 — DNS<br/>stadium-wallet.example.com<br/>Routing Policy: Failover / Weighted"]
 
     DNS -- "Health Check East" --> East
     DNS -- "Health Check West" --> West
