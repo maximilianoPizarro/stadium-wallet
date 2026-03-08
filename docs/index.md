@@ -8,7 +8,10 @@ lang: en
 <section class="hero-section">
   <h1>Stadium <span>Wallet</span></h1>
   <p class="hero-sub">Official Installation, Testing &amp; Architecture Guide — Complete digital wallet ecosystem for stadiums on Red Hat OpenShift.</p>
-  <p class="hero-meta"><strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro, Specialist Solution Architect at Red Hat &nbsp;|&nbsp; <strong>Infra & Service Mesh:</strong> <a href="https://github.com/panchoraposo">Francisco Raposo</a>, Specialist Solution Architect at Red Hat</p>
+  <p class="hero-authors">
+    <strong>Owner:</strong> Maximiliano Pizarro, Specialist Solution Architect at Red Hat<br>
+    <strong>Infra & Service Mesh:</strong> <a href="https://github.com/panchoraposo">Francisco Raposo</a>, Senior Specialist Solution Architect at Red Hat
+  </p>
 </section>
 
 <div class="toc" markdown="0">
@@ -1817,6 +1820,6 @@ helm install nfl-wallet nfl-wallet/nfl-wallet -n nfl-wallet
   <p style="font-size:0.9rem; color:var(--rh-gray-500);">
     <strong>Stadium Wallet v2.0</strong> — Documentation generated for GitHub Pages<br>
     Stack: OpenShift 4.20+ · GitOps (ArgoCD) · OSSM 3.2 (Ambient Mode) · Kuadrant · Gateway API · RHDH · Vue.js · .NET 8<br>
-    Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a>, Specialist Solution Architect at Red Hat · Infra & Service Mesh: <a href="https://github.com/panchoraposo">Francisco Raposo</a>, Specialist Solution Architect at Red Hat
+    Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a>, Specialist Solution Architect at Red Hat · Infra & Service Mesh: <a href="https://github.com/panchoraposo">Francisco Raposo</a>, Senior Specialist Solution Architect at Red Hat
   </p>
 </div>
