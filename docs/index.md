@@ -6,17 +6,9 @@ lang: en
 ---
 
 <section class="hero-section">
-  <div class="hero-badge-row">
-    <img src="https://img.shields.io/badge/redhat-CC0000?style=for-the-badge&logo=redhat&logoColor=white" alt="Red Hat">
-    <img src="https://img.shields.io/badge/kubernetes-%23326ce5.svg?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes">
-    <img src="https://img.shields.io/badge/helm-0db7ed?style=for-the-badge&logo=helm&logoColor=white" alt="Helm">
-    <img src="https://img.shields.io/badge/ArgoCD-EF7B4D?style=for-the-badge&logo=argo&logoColor=white" alt="ArgoCD">
-    <img src="https://img.shields.io/badge/.NET%208-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 8">
-    <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js">
-  </div>
   <h1>Stadium <span>Wallet</span></h1>
   <p class="hero-sub">Official Installation, Testing &amp; Architecture Guide — Complete digital wallet ecosystem for stadiums on Red Hat OpenShift.</p>
-  <p class="hero-meta"><strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro &nbsp;|&nbsp; <strong>Infra & Service Mesh:</strong> <a href="https://github.com/panchoraposo">Francisco Raposo</a></p>
+  <p class="hero-meta"><strong>Version:</strong> 2.0 &nbsp;|&nbsp; <strong>Owner:</strong> Maximiliano Pizarro, Specialist Solution Architect at Red Hat &nbsp;|&nbsp; <strong>Infra & Service Mesh:</strong> <a href="https://github.com/panchoraposo">Francisco Raposo</a>, Specialist Solution Architect at Red Hat</p>
 </section>
 
 <div class="toc" markdown="0">
@@ -39,12 +31,12 @@ lang: en
     <li><a href="#gitops">Multi-Cluster GitOps with ACM</a></li>
     <li><a href="#developer-hub">Red Hat Developer Hub (Kuadrant Plugin)</a></li>
     <li><a href="#observability">Observability</a></li>
-    <li><a href="#screenshots">Screenshots</a></li>
     <li><a href="#canary">Canary / Blue-Green Deployments</a></li>
     <li><a href="#testing">Test Plan &amp; Validation (QA)</a></li>
     <li><a href="#api-reference">API Reference</a></li>
     <li><a href="#troubleshooting">Troubleshooting</a></li>
     <li><a href="#artifact-hub">Publish to Artifact Hub</a></li>
+    <li><a href="#screenshots">Appendix — Screenshots</a></li>
   </ol>
 </div>
 
@@ -209,17 +201,6 @@ The `api-bills` and `api-raiders` microservices require real-time sports data.
 ---
 
 # 3. Technology Stack {#technology-stack}
-
-<div class="tech-badges">
-  <img src="https://img.shields.io/badge/OpenShift-EE0000?style=for-the-badge&logo=redhatopenshift&logoColor=white" alt="OpenShift">
-  <img src="https://img.shields.io/badge/ArgoCD-EF7B4D?style=for-the-badge&logo=argo&logoColor=white" alt="ArgoCD">
-  <img src="https://img.shields.io/badge/Istio-466BB0?style=for-the-badge&logo=istio&logoColor=white" alt="Istio">
-  <img src="https://img.shields.io/badge/Helm-0F1689?style=for-the-badge&logo=helm&logoColor=white" alt="Helm">
-  <img src="https://img.shields.io/badge/.NET%208-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 8">
-  <img src="https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white" alt="Vue.js">
-  <img src="https://img.shields.io/badge/Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white" alt="Grafana">
-  <img src="https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white" alt="Prometheus">
-</div>
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
@@ -1426,119 +1407,7 @@ export API_KEY_PROD="nfl-wallet-customers-key"
 
 ---
 
-# 12. Screenshots {#screenshots}
-
-## 12.1 Wallet Application
-
-[![Wallet Landing]({{ '/images/walletlanding.png' | relative_url }})]({{ '/images/walletlanding.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Wallet Landing Page — Entry point of the Stadium Wallet web application.</span>
-
-[![Customer List]({{ '/images/wallet.png' | relative_url }})]({{ '/images/wallet.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Customer List — Select a customer to view their team wallets.</span>
-
-[![Wallet Balances]({{ '/images/wallet2.png' | relative_url }})]({{ '/images/wallet2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Wallet Balances — Buffalo Bills and Las Vegas Raiders: balances and transactions.</span>
-
-[![QR Payment]({{ '/images/wallet3.png' | relative_url }})]({{ '/images/wallet3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">QR Payment Flow — Payment from a team wallet.</span>
-
-[![Load Balance]({{ '/images/wallet4.png' | relative_url }})]({{ '/images/wallet4.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Load Balance — Add funds to a team wallet.</span>
-
-## 12.2 Platform & Observability
-
-**Metrics dashboards:** Grafana aggregates metrics emitted by Waypoint Proxies and ztunnel, enabling monitoring of request rate, response codes, duration, and error rate per environment. The dashboard uses the `namespace` variable to filter between dev, test, and prod.
-
-[![Grafana Dashboard]({{ '/images/grafana-dashboard.png' | relative_url }})]({{ '/images/grafana-dashboard.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Grafana — "Stadium Wallet – All environments" dashboard: request rate, response codes, duration, error rate by environment.</span>
-
-**Mesh topology and traffic:** Kiali provides real-time visualization of the service graph within the mesh. Nodes represent workloads and edges show observed HTTP traffic with success/error rates. This enables diagnosing connectivity issues without inspecting individual logs.
-
-[![Service Mesh Grafana]({{ '/images/service-mesh-grafana.png' | relative_url }})]({{ '/images/service-mesh-grafana.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Service graph with multi-namespace traffic (dev/test/prod) and HTTP metrics.</span>
-
-[![Kiali Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Detailed Service Mesh topology with node legend, workloads and services.</span>
-
-[![Kiali Multi-Cluster]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Kiali — Multi-cluster Service Graph showing traffic between East and West with Istio gateways.</span>
-
-**Mesh management from OpenShift Console:** The integrated Service Mesh view in OpenShift Console shows active control planes, gateways, and waypoints, providing an operational overview without leaving the management console.
-
-[![Service Mesh Overview]({{ '/images/service-mesh.png' | relative_url }})]({{ '/images/service-mesh.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">OpenShift Console — Service Mesh view: control planes, gateways, waypoints and components.</span>
-
-**Exposed APIs:** Stadium Wallet APIs are automatically documented via OpenAPI (Swagger). Each microservice exposes its specification, which RHDH then discovers and registers in the Backstage catalog.
-
-[![API Customers]({{ '/images/api-customers.png' | relative_url }})]({{ '/images/api-customers.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">API Customers — Swagger UI for the customers service.</span>
-
-[![API Bills]({{ '/images/api-bills.png' | relative_url }})]({{ '/images/api-bills.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">API Bills — Swagger UI for the Buffalo Bills wallet service.</span>
-
-## 12.5 Red Hat Developer Hub — Kuadrant Plugin {#rhdh-screenshots}
-
-**Developer self-service portal:** The following screenshots show the complete flow within RHDH: from discovering the API and its policies, to requesting access and obtaining credentials. This flow replaces the manual process of creating tickets and waiting for provisioning — developers obtain their API Key in minutes, with rate limiting tiers already configured.
-
-[![RHDH Policies]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }})]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Policies tab: PlanPolicy and AuthPolicy discovered for nfl-wallet-api-customers. Effective tiers: gold (1000/day), silver (500/day), bronze (100/day).</span>
-
-[![RHDH API Definition]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Definition tab: Stadium Wallet - Customers API v1 (OAS 3.0) with documented endpoints and per-environment server selector.</span>
-
-[![RHDH Request Access]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }})]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Access request modal: Silver tier selection (500 per daily), Use Case field and Submit Request button.</span>
-
-[![RHDH API Keys]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">RHDH Kuadrant Plugin — Provisioned API Keys with approved Silver tier, generated key and code examples in cURL, Node.js, Python and Go.</span>
-
-**Multi-cluster observability with ACM:** ACM manages not only workload deployment but also the observability infrastructure. The `observability-east-west` ApplicationSet deploys Grafana, dashboards, datasources, and routes identically on both clusters, ensuring a consistent monitoring experience regardless of where services run.
-
-[![ACM Observability]({{ '/images/acm-observability-east-west.png' | relative_url }})]({{ '/images/acm-observability-east-west.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — ApplicationSet observability-east-west: topology with Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace and Route for centralized observability.</span>
-
-[![Grafana Multi-Cluster]({{ '/images/grafana-multi-cluster.png' | relative_url }})]({{ '/images/grafana-multi-cluster.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Grafana Multi-Cluster — "Stadium Wallet - All environments" dashboard with cluster filter (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate and request rate by service.</span>
-
-**GitOps and cluster management:** ArgoCD reconciles the state declared in Git with the actual state of each cluster. ACM complements this by providing the hub and managed clusters topology view, and the status of each distributed Application.
-
-[![GitOps ArgoCD]({{ '/images/gitops.png' | relative_url }})]({{ '/images/gitops.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications and sync status.</span>
-
-[![ACM Topology]({{ '/images/ACM3.png' | relative_url }})]({{ '/images/ACM3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Topology with hub and managed clusters (East, West).</span>
-
-[![ACM Applications]({{ '/images/ACM4.png' | relative_url }})]({{ '/images/ACM4.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — ApplicationSet and the 6 generated Applications.</span>
-
-[![ACM Overview]({{ '/images/ACM.png' | relative_url }})]({{ '/images/ACM.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Advanced Cluster Management overview.</span>
-
-[![ACM Detail]({{ '/images/ACM2.png' | relative_url }})]({{ '/images/ACM2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">ACM — Managed clusters detail and status.</span>
-
-**Detailed metrics and traces:** The observability stack provides multiple levels of detail: from aggregated gateway metrics (request rate, error rate) to individual distributed traces showing the complete path of a request through services. This enables investigating issues from the general (is there an increase in errors?) to the specific (which request failed and on which service?).
-
-[![Observability]({{ '/images/observability.png' | relative_url }})]({{ '/images/observability.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Observability — OpenShift console with monitoring stack metrics.</span>
-
-[![Observability Metrics]({{ '/images/observability2.png' | relative_url }})]({{ '/images/observability2.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Gateway metrics (request rate, success and error rates) available after PodMonitor/ServiceMonitor configuration.</span>
-
-[![Observability Detail]({{ '/images/observability3.png' | relative_url }})]({{ '/images/observability3.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Detailed observability view with Istio/Envoy metrics for the Stadium Wallet gateway.</span>
-
-**Traffic analysis and distributed traces:** Distributed traces (via TempoStack/Jaeger) show the time each hop takes within a request, enabling bottleneck identification. Traffic analysis complements traces with a request flow view, latency, and response code distribution.
-
-[![Traffic Analysis]({{ '/images/traffic-analysis.png' | relative_url }})]({{ '/images/traffic-analysis.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Traffic Analysis — Request flow, latency and response codes.</span>
-
-[![Jaeger Traces]({{ '/images/jaeger-traces.png' | relative_url }})]({{ '/images/jaeger-traces.png' | relative_url }}){: .doc-img-link}
-<span class="img-caption">Jaeger — Distributed traces for Stadium Wallet services.</span>
-
----
-
-# 12.3 Canary / Blue-Green Deployments {#canary}
+# 12. Canary / Blue-Green Deployments {#canary}
 
 The production overlay includes an additional **canary Route** (`nfl-wallet-canary.apps.<cluster-domain>`) that points to the same gateway Service (`nfl-wallet-gateway-istio`), enabling blue/green traffic when the chart creates the corresponding HTTPRoute.
 
@@ -1832,10 +1701,122 @@ helm install nfl-wallet nfl-wallet/nfl-wallet -n nfl-wallet
 
 ---
 
+# Appendix — Screenshots {#screenshots}
+
+## A.1 Wallet Application
+
+[![Wallet Landing]({{ '/images/walletlanding.png' | relative_url }})]({{ '/images/walletlanding.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Wallet Landing Page — Entry point of the Stadium Wallet web application.</span>
+
+[![Customer List]({{ '/images/wallet.png' | relative_url }})]({{ '/images/wallet.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Customer List — Select a customer to view their team wallets.</span>
+
+[![Wallet Balances]({{ '/images/wallet2.png' | relative_url }})]({{ '/images/wallet2.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Wallet Balances — Buffalo Bills and Las Vegas Raiders: balances and transactions.</span>
+
+[![QR Payment]({{ '/images/wallet3.png' | relative_url }})]({{ '/images/wallet3.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">QR Payment Flow — Payment from a team wallet.</span>
+
+[![Load Balance]({{ '/images/wallet4.png' | relative_url }})]({{ '/images/wallet4.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Load Balance — Add funds to a team wallet.</span>
+
+## A.2 Platform & Observability
+
+**Metrics dashboards:** Grafana aggregates metrics emitted by Waypoint Proxies and ztunnel, enabling monitoring of request rate, response codes, duration, and error rate per environment. The dashboard uses the `namespace` variable to filter between dev, test, and prod.
+
+[![Grafana Dashboard]({{ '/images/grafana-dashboard.png' | relative_url }})]({{ '/images/grafana-dashboard.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Grafana — "Stadium Wallet – All environments" dashboard: request rate, response codes, duration, error rate by environment.</span>
+
+**Mesh topology and traffic:** Kiali provides real-time visualization of the service graph within the mesh. Nodes represent workloads and edges show observed HTTP traffic with success/error rates. This enables diagnosing connectivity issues without inspecting individual logs.
+
+[![Service Mesh Grafana]({{ '/images/service-mesh-grafana.png' | relative_url }})]({{ '/images/service-mesh-grafana.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Kiali — Service graph with multi-namespace traffic (dev/test/prod) and HTTP metrics.</span>
+
+[![Kiali Topology]({{ '/images/service-mesh-kiali-topology.png' | relative_url }})]({{ '/images/service-mesh-kiali-topology.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Kiali — Detailed Service Mesh topology with node legend, workloads and services.</span>
+
+[![Kiali Multi-Cluster]({{ '/images/service-mesh-kiali.png' | relative_url }})]({{ '/images/service-mesh-kiali.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Kiali — Multi-cluster Service Graph showing traffic between East and West with Istio gateways.</span>
+
+**Mesh management from OpenShift Console:** The integrated Service Mesh view in OpenShift Console shows active control planes, gateways, and waypoints, providing an operational overview without leaving the management console.
+
+[![Service Mesh Overview]({{ '/images/service-mesh.png' | relative_url }})]({{ '/images/service-mesh.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">OpenShift Console — Service Mesh view: control planes, gateways, waypoints and components.</span>
+
+**Exposed APIs:** Stadium Wallet APIs are automatically documented via OpenAPI (Swagger). Each microservice exposes its specification, which RHDH then discovers and registers in the Backstage catalog.
+
+[![API Customers]({{ '/images/api-customers.png' | relative_url }})]({{ '/images/api-customers.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">API Customers — Swagger UI for the customers service.</span>
+
+[![API Bills]({{ '/images/api-bills.png' | relative_url }})]({{ '/images/api-bills.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">API Bills — Swagger UI for the Buffalo Bills wallet service.</span>
+
+## A.3 Red Hat Developer Hub — Kuadrant Plugin {#rhdh-screenshots}
+
+**Developer self-service portal:** The following screenshots show the complete flow within RHDH: from discovering the API and its policies, to requesting access and obtaining credentials. This flow replaces the manual process of creating tickets and waiting for provisioning — developers obtain their API Key in minutes, with rate limiting tiers already configured.
+
+[![RHDH Policies]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }})]({{ '/images/rhdh-kuadrant-policies.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">RHDH Kuadrant Plugin — Policies tab: PlanPolicy and AuthPolicy discovered for nfl-wallet-api-customers. Effective tiers: gold (1000/day), silver (500/day), bronze (100/day).</span>
+
+[![RHDH API Definition]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-definition.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">RHDH Kuadrant Plugin — Definition tab: Stadium Wallet - Customers API v1 (OAS 3.0) with documented endpoints and per-environment server selector.</span>
+
+[![RHDH Request Access]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }})]({{ '/images/rhdh-kuadrant-request-access.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">RHDH Kuadrant Plugin — Access request modal: Silver tier selection (500 per daily), Use Case field and Submit Request button.</span>
+
+[![RHDH API Keys]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }})]({{ '/images/rhdh-kuadrant-api-keys.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">RHDH Kuadrant Plugin — Provisioned API Keys with approved Silver tier, generated key and code examples in cURL, Node.js, Python and Go.</span>
+
+**Multi-cluster observability with ACM:** ACM manages not only workload deployment but also the observability infrastructure. The `observability-east-west` ApplicationSet deploys Grafana, dashboards, datasources, and routes identically on both clusters, ensuring a consistent monitoring experience regardless of where services run.
+
+[![ACM Observability]({{ '/images/acm-observability-east-west.png' | relative_url }})]({{ '/images/acm-observability-east-west.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — ApplicationSet observability-east-west: topology with Configmap, Grafana, GrafanaDashboard, GrafanaDataSource, Namespace and Route for centralized observability.</span>
+
+[![Grafana Multi-Cluster]({{ '/images/grafana-multi-cluster.png' | relative_url }})]({{ '/images/grafana-multi-cluster.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Grafana Multi-Cluster — "Stadium Wallet - All environments" dashboard with cluster filter (East/West): request rate, response codes, request duration (p50/p99), total requests, error rate and request rate by service.</span>
+
+**GitOps and cluster management:** ArgoCD reconciles the state declared in Git with the actual state of each cluster. ACM complements this by providing the hub and managed clusters topology view, and the status of each distributed Application.
+
+[![GitOps ArgoCD]({{ '/images/gitops.png' | relative_url }})]({{ '/images/gitops.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">OpenShift GitOps (ArgoCD) — Applications and sync status.</span>
+
+[![ACM Topology]({{ '/images/ACM3.png' | relative_url }})]({{ '/images/ACM3.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — Topology with hub and managed clusters (East, West).</span>
+
+[![ACM Applications]({{ '/images/ACM4.png' | relative_url }})]({{ '/images/ACM4.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — ApplicationSet and the 6 generated Applications.</span>
+
+[![ACM Overview]({{ '/images/ACM.png' | relative_url }})]({{ '/images/ACM.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — Advanced Cluster Management overview.</span>
+
+[![ACM Detail]({{ '/images/ACM2.png' | relative_url }})]({{ '/images/ACM2.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">ACM — Managed clusters detail and status.</span>
+
+**Detailed metrics and traces:** The observability stack provides multiple levels of detail: from aggregated gateway metrics (request rate, error rate) to individual distributed traces showing the complete path of a request through services. This enables investigating issues from the general (is there an increase in errors?) to the specific (which request failed and on which service?).
+
+[![Observability]({{ '/images/observability.png' | relative_url }})]({{ '/images/observability.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Observability — OpenShift console with monitoring stack metrics.</span>
+
+[![Observability Metrics]({{ '/images/observability2.png' | relative_url }})]({{ '/images/observability2.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Gateway metrics (request rate, success and error rates) available after PodMonitor/ServiceMonitor configuration.</span>
+
+[![Observability Detail]({{ '/images/observability3.png' | relative_url }})]({{ '/images/observability3.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Detailed observability view with Istio/Envoy metrics for the Stadium Wallet gateway.</span>
+
+**Traffic analysis and distributed traces:** Distributed traces (via TempoStack/Jaeger) show the time each hop takes within a request, enabling bottleneck identification. Traffic analysis complements traces with a request flow view, latency, and response code distribution.
+
+[![Traffic Analysis]({{ '/images/traffic-analysis.png' | relative_url }})]({{ '/images/traffic-analysis.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Traffic Analysis — Request flow, latency and response codes.</span>
+
+[![Jaeger Traces]({{ '/images/jaeger-traces.png' | relative_url }})]({{ '/images/jaeger-traces.png' | relative_url }}){: .doc-img-link}
+<span class="img-caption">Jaeger — Distributed traces for Stadium Wallet services.</span>
+
+---
+
 <div style="text-align:center; margin-top:3rem; padding:2rem; background:var(--rh-gray-100); border-radius:4px;">
   <p style="font-size:0.9rem; color:var(--rh-gray-500);">
     <strong>Stadium Wallet v2.0</strong> — Documentation generated for GitHub Pages<br>
     Stack: OpenShift 4.20+ · GitOps (ArgoCD) · OSSM 3.2 (Ambient Mode) · Kuadrant · Gateway API · RHDH · Vue.js · .NET 8<br>
-    Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a> · Infra & Service Mesh: <a href="https://github.com/panchoraposo">Francisco Raposo</a>
+    Owner: <a href="https://www.linkedin.com/in/maximiliano-gregorio-pizarro-consultor-it">Maximiliano Pizarro</a>, Specialist Solution Architect at Red Hat · Infra & Service Mesh: <a href="https://github.com/panchoraposo">Francisco Raposo</a>, Specialist Solution Architect at Red Hat
   </p>
 </div>
