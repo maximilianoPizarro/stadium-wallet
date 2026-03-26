@@ -467,8 +467,17 @@ tr:hover { background: #f5f5f5; }
   border-radius: 0;
   border-top: 1px solid var(--rh-border);
   font-size: 0.78rem;
+  line-height: 1.5;
   max-height: 350px;
   overflow-y: auto;
+  background: #1e1e1e;
+  padding: 0.75rem 1rem;
+}
+.yaml-resources details pre code {
+  font-family: "Red Hat Mono", "Fira Code", monospace;
+  color: #d4d4d4;
+  white-space: pre;
+  display: block;
 }
 
 /* TOC */

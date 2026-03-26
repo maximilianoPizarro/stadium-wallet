@@ -96,6 +96,9 @@ Los microservicios interactúan con fuentes de datos externas (**API de ESPN**) 
 | [Kuadrant — Proyecto](https://kuadrant.io/) | Sitio del proyecto open source |
 | [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift) | Guía de inicio rápido en Red Hat Developer |
 | [OSSM3 Ambient Mode — Multi-Cluster Demo](https://github.com/panchoraposo/ossm3-ambient-mode) | Repo de Francisco Raposo: Ansible playbooks para OSSM3, Bookinfo y observabilidad multi-cluster |
+| [Connectivity Link — Developer Hub Deployment](https://gitlab.com/maximilianoPizarro/connectivity-link/-/tree/main/developer-hub) | Despliegue GitOps de RHDH en Red Hat Developer Sandbox con Kuadrant, Keycloak, MCP y RBAC |
+| [RHBK NeuroFace Biometric Flow](https://maximilianopizarro.github.io/rhbk-biometric-flow/) | RHBK 26.0 con 2FA biométrico facial vía NeuroFace SPI — Helm chart, videos demo y arquitectura |
+| [NeuroFace — Servicio de Reconocimiento Facial](https://github.com/maximilianoPizarro/neuroface) | Webapp de reconocimiento facial FastAPI + Angular 17 con OpenCV LBPH / dlib |
 
 ---
 
@@ -762,9 +765,116 @@ Stadium Wallet implementa una **estrategia de seguridad progresiva** donde cada 
 
 ### Autenticación Biométrica (RHBK + NeuroFace)
 
-La versión **0.1.3** del chart incluye **Red Hat build of Keycloak (RHBK)** con autenticación biométrica facial **NeuroFace** como dependencia opcional. Los usuarios se autentican con usuario/contraseña seguidos de reconocimiento facial como segundo factor.
+La versión **0.1.3** del chart incluye **[Red Hat build of Keycloak (RHBK)](https://maximilianopizarro.github.io/rhbk-biometric-flow/)** con autenticación biométrica facial **NeuroFace** como dependencia opcional de Helm. Los usuarios se autentican con usuario/contraseña seguidos de reconocimiento facial como segundo factor (2FA).
 
 El chart precarga el realm con 7 cuentas de cliente de prueba (alineadas con los datos semilla de la API Customers). En el primer inicio de sesión cada usuario debe completar el enrolamiento biométrico (captura facial). Los inicios posteriores usan verificación facial como segundo factor.
+
+#### Arquitectura del Componente
+
+El sistema biométrico consiste en dos contenedores desplegados en el mismo namespace, conectados mediante un SPI de Keycloak personalizado:
+
+```
+┌─────────────────────────────────┐     ┌──────────────────────────────────┐
+│  RHBK (Keycloak 26 — UBI9)     │     │  NeuroFace Backend (FastAPI)     │
+│                                 │     │                                  │
+│  ┌───────────────────────────┐  │     │  POST /api/images   ← enrollment│
+│  │ Biometric SPI (JAR)       │  │     │  POST /api/train    ← training  │
+│  │                           │──┼─────┼─►POST /api/recognize ← verify   │
+│  │ • BiometricAuthenticator  │  │     │  GET  /api/health   ← health    │
+│  │   (2FA facial login)      │  │     │  GET  /api/labels   ← labels    │
+│  │                           │  │     │                                  │
+│  │ • BiometricEnrollment     │  │     └──────────────────────────────────┘
+│  │   (delegated registration)│  │
+│  └───────────────────────────┘  │     ┌──────────────────────────────────┐
+│                                 │     │  NeuroFace Frontend (Angular 17) │
+│  Realm: neuroface               │     │  ← Protected by OIDC client     │
+│  Client: neuroface-app          │     │     "neuroface-app"              │
+│  Flow: biometric browser        │     └──────────────────────────────────┘
+│  Flow: biometric registration   │
+└─────────────────────────────────┘
+```
+
+#### Componentes SPI
+
+La capacidad biométrica se implementa como un SPI de Keycloak (Service Provider Interface) empaquetado como JAR desplegado en la imagen RHBK:
+
+| Proveedor | Tipo | ID | Descripción |
+|-----------|------|-----|-------------|
+| **BiometricAuthenticator** | Authenticator | `biometric-authenticator` | 2FA vía NeuroFace `/api/recognize` |
+| **BiometricEnrollment** | Required Action | `biometric-enrollment` | Enrolamiento facial multi-imagen en primer login |
+| **NeuroFaceClient** | Interno | — | Cliente HTTP para la API REST de NeuroFace |
+
+#### Configuración del Realm
+
+| Componente | Detalles |
+|-----------|---------|
+| **Clientes** | `neuroface-app` (público, PKCE S256), `neuroface-backend` (bearer-only) |
+| **Flujo Browser** | `biometric browser` — cookie O (contraseña + 2FA facial) |
+| **Flujo Registro** | `biometric registration` — creación delegada |
+| **Acción Requerida** | `biometric-enrollment` — enrolamiento facial en primer login |
+| **Roles** | `biometric-user`, `biometric-admin` |
+| **Grupo** | `biometric-enrolled` — asignado automáticamente tras enrolamiento |
+
+#### Endpoints API de NeuroFace
+
+NeuroFace es un servicio de reconocimiento facial construido con **FastAPI** y **Angular 17**, containerizado con imágenes certificadas Red Hat UBI9. El SPI se comunica con estos endpoints:
+
+| Endpoint | Método | Uso |
+|----------|--------|-----|
+| `/api/health` | GET | Health check antes de operaciones biométricas |
+| `/api/images` | POST | Subir imágenes faciales durante enrolamiento (multipart) |
+| `/api/train` | POST | Entrenar el modelo de reconocimiento tras enrolamiento |
+| `/api/recognize` | POST | Verificar identidad facial durante login 2FA |
+| `/api/labels` | GET | Listar etiquetas biométricas registradas |
+
+#### Flujos de Autenticación
+
+**1. Creación Delegada con Enrolamiento Biométrico:**
+
+```mermaid
+sequenceDiagram
+    participant Admin as KC Admin
+    participant User as Usuario
+    participant RHBK as RHBK (Keycloak)
+    participant SPI as Biometric SPI
+    participant NF as NeuroFace API
+
+    Admin->>RHBK: Crear usuario + asignar Required Action<br/>"biometric-enrollment"
+    User->>RHBK: Primer login con credenciales temporales
+    RHBK->>SPI: Disparar enrolamiento biométrico
+    SPI->>User: Webcam: capturar 3–5 imágenes<br/>desde diferentes ángulos
+    User-->>SPI: Imágenes faciales (base64)
+    SPI->>NF: POST /api/images (label=username)
+    SPI->>NF: POST /api/train
+    NF-->>SPI: Modelo entrenado
+    SPI->>RHBK: biometric_enrolled = true<br/>Usuario se une al grupo "biometric-enrolled"
+```
+
+**2. Login con Segundo Factor Biométrico (2FA):**
+
+```mermaid
+sequenceDiagram
+    participant User as Usuario
+    participant RHBK as RHBK (Keycloak)
+    participant SPI as Biometric SPI
+    participant NF as NeuroFace API
+
+    User->>RHBK: Usuario + Contraseña
+    RHBK->>SPI: Disparar verificación 2FA
+    SPI->>User: Webcam: capturar imagen facial
+    User-->>SPI: Imagen facial (base64)
+    SPI->>NF: POST /api/recognize { image: base64 }
+    NF-->>SPI: { label, confidence }
+    alt label == username AND confidence >= threshold
+        SPI->>RHBK: Verificación OK
+        RHBK-->>User: Acceso concedido
+    else Sin coincidencia o confianza baja
+        SPI->>RHBK: Verificación fallida
+        RHBK-->>User: Acceso denegado
+    end
+```
+
+#### Despliegue
 
 ```bash
 helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
@@ -774,15 +884,43 @@ helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
 
 > **Nota:** `keycloakUrl` debe ser la URL base de RHBK sin `/realms/<nombre>` — keycloak-js añade automáticamente la ruta del realm a partir de `webapp.keycloakRealm` (por defecto `neuroface`).
 
-Los parámetros biométricos se ajustan mediante valores de Helm:
+#### Valores del Helm Chart
+
+**RHBK (Keycloak):**
+
+| Parámetro | Por defecto | Descripción |
+|-----------|-------------|-------------|
+| `rhbk.image.repository` | `registry.redhat.io/rhbk/keycloak-rhel9` | Imagen RHBK |
+| `rhbk.image.tag` | `26.0` | Tag de imagen |
+| `rhbk.replicas` | `1` | Réplicas |
+| `rhbk.resources.limits.cpu` | `1` | Límite CPU |
+| `rhbk.resources.limits.memory` | `1Gi` | Límite memoria |
+| `admin.username` / `admin.password` | `admin` / `admin` | Credenciales admin iniciales |
+
+**Configuración Biométrica:**
 
 | Parámetro | Descripción | Por defecto |
 |-----------|-------------|-------------|
-| `confidenceThreshold` | Confianza de coincidencia facial % | `65` |
-| `maxEnrollmentImages` | Capturas de enrolamiento | `5` |
-| `cameraWidth` × `cameraHeight` | Resolución de cámara | `640` × `480` |
+| `biometric.confidenceThreshold` | Confianza mínima de coincidencia facial (0–100) | `65` |
+| `biometric.maxEnrollmentImages` | Número de capturas de enrolamiento | `5` |
+| `biometric.webcamWidth` × `webcamHeight` | Resolución de cámara (px) | `640` × `480` |
 
 Presets de resolución de cámara: **QVGA** 320×240, **VGA** 640×480 (por defecto), **HD 720p** 1280×720, **Full HD** 1920×1080. Mayor resolución mejora la precisión pero aumenta el tiempo de procesamiento. El ApplicationSet habilita el login biométrico en **dev** y **test** con **1920 × 1080** (FHD).
+
+**Subchart NeuroFace:**
+
+| Parámetro | Por defecto | Descripción |
+|-----------|-------------|-------------|
+| `neuroface.enabled` | `true` | Desplegar subchart NeuroFace |
+| `neuroface.backend.aiModel` | `lbph` | Modelo IA (`lbph` / `dlib`) |
+| `neuroface.backend.replicas` | `1` | Réplicas del backend |
+| `neuroface.frontend.replicas` | `1` | Réplicas del frontend |
+| `neuroface.chat.enabled` | `true` | Habilitar chat IA (Granite LLM) |
+| `neuroface.persistence.enabled` | `true` | Habilitar almacenamiento persistente |
+| `neuroface.persistence.size` | `1Gi` | Tamaño del PVC |
+| `neuroface.route.enabled` | `true` | Crear Route de OpenShift para NeuroFace |
+
+> **Fuente:** [RHBK NeuroFace Biometric Flow](https://maximilianopizarro.github.io/rhbk-biometric-flow/) — Documentación completa, videos demo, capturas y referencia del Helm chart. Charts disponibles en [Artifact Hub (rhbk-neuroface)](https://artifacthub.io/packages/helm/rhbk-neuroface) y [Artifact Hub (neuroface)](https://artifacthub.io/packages/helm/neuroface).
 
 ### Política OIDC (Ambiente Test)
 
@@ -1438,6 +1576,131 @@ sequenceDiagram
 
 > **Importante:** Los Secrets con API Keys deben existir en el mismo namespace que la AuthPolicy. Para producción, se recomienda usar **Sealed Secrets** o **External Secrets Operator** en lugar de commitear keys directamente en Git.
 
+## 10.3 Despliegue en Red Hat Developer Sandbox (Connectivity Link)
+
+El despliegue de Developer Hub de Stadium Wallet también está validado en **Red Hat Developer Sandbox** a través del repositorio GitOps [connectivity-link](https://gitlab.com/maximilianoPizarro/connectivity-link/-/tree/main/developer-hub). Este repositorio provee un **ApplicationSet consolidado** que despliega el stack completo de Connectivity Link — incluyendo RHDH, Keycloak, Service Mesh, Kuadrant y la aplicación demo NeuralBank — en un único cluster OpenShift con aprovisionamiento automatizado por Ansible.
+
+### Arquitectura
+
+El repositorio Connectivity Link utiliza un **ApplicationSet con ordenamiento sync_wave** para desplegar todos los componentes de infraestructura en la secuencia correcta:
+
+| Sync Wave | Componentes |
+|-----------|-------------|
+| **Wave 0** | Operador OpenShift GitOps |
+| **Wave 1** | Namespaces (`developer-hub`, `rhbk`, `neuralbank`, etc.) |
+| **Wave 2** | Operadores (RHBK Operator, configuraciones RBAC) |
+| **Wave 3** | Infraestructura (Service Mesh, RHCL Operator, Developer Hub) |
+| **Wave 4–7** | Aplicaciones (NeuralBank Stack, LiteMaaS, catálogo NFL-Wallet) |
+
+### Custom Resource de RHDH
+
+Developer Hub se despliega usando el CRD **Backstage** `rhdh.redhat.com/v1alpha3` con configuración declarativa:
+
+```yaml
+apiVersion: rhdh.redhat.com/v1alpha3
+kind: Backstage
+metadata:
+  name: developer-hub
+spec:
+  application:
+    appConfig:
+      configMaps:
+      - name: app-config-rhdh
+    dynamicPluginsConfigMapName: dynamic-plugins-rhdh
+    extraEnvs:
+      secrets:
+      - name: secrets-rhdh
+      - name: developer-hub-k8s-sa-token
+        key: token
+    extraFiles:
+      configMaps:
+      - name: rhdh-rbac-policy
+    replicas: 1
+    route:
+      enabled: true
+  database:
+    enableLocalDb: true
+  deployment:
+    patch:
+      spec:
+        template:
+          spec:
+            automountServiceAccountToken: true
+```
+
+### Plugins Dinámicos
+
+El despliegue incluye plugins dinámicos preconfigurados que extienden la funcionalidad de RHDH:
+
+| Plugin | Propósito | Estado |
+|--------|-----------|--------|
+| **Kuadrant** (frontend + backend) | Gestión de API Products, API Keys, PlanPolicy, RateLimitPolicy, AuthPolicy | Habilitado |
+| **Keycloak Org** | Sincronización de usuarios/grupos desde realms de Keycloak | Habilitado |
+| **GitLab Scaffolder** | Software Templates para crear nuevos componentes desde GitLab | Habilitado |
+| **Kubernetes Backend** | Visibilidad de recursos in-cluster (pods, deployments, services) | Habilitado |
+| **Tekton** | Visualización de pipelines CI/CD (PipelineRuns, TaskRuns) | Habilitado |
+| **MCP Actions** (backend) | Servidor Model Context Protocol para interacciones asistidas por IA | Habilitado |
+| **Quickstart** | Experiencia guiada de onboarding | Habilitado |
+| **RBAC** | Interfaz de control de acceso basado en roles y gestión de políticas | Habilitado |
+| **Lightspeed** | Asistente de chat con IA (backend llama-stack) | Deshabilitado (conflictos de versión) |
+
+### Modelo de Permisos RBAC
+
+El despliegue implementa un **modelo RBAC jerárquico** con tres niveles de permisos, sincronizados desde grupos de Keycloak:
+
+```
+platform-team (acceso completo)
+  ├── infrastructure
+  ├── platformengineers
+  └── rhdh
+
+application-team (acceso limitado)
+  ├── developers
+  └── devteam1
+
+authenticated-users (solo lectura)
+  └── todos los usuarios logueados
+```
+
+| Rol | Catálogo | Scaffolder | Plugins | Políticas RBAC |
+|-----|----------|------------|---------|----------------|
+| **Platform Team** | CRUD completo | Acceso total | Instalar/Desinstalar | CRUD completo |
+| **Application Team** | Solo lectura | Ejecutar templates | — | — |
+| **Usuarios Autenticados** | Solo lectura | Ejecutar templates | — | — |
+
+### Integración de Catálogo
+
+El `app-config.yaml` configura descubrimiento automático de catálogo desde GitLab, registrando las APIs de Stadium Wallet junto con otros componentes de Connectivity Link:
+
+| Proveedor de Catálogo | Repositorio | Contenido |
+|-----------------------|-------------|-----------|
+| `nfl-wallet` | `maximilianoPizarro/NFL-Wallet` | Definiciones API (OpenAPI), entidades Component |
+| `nfl-wallet-catalog` | `connectivity-link/developer-hub/catalog/` | Entidades Component dev/test/prod, API Products |
+| `neuralbank-stack` | `connectivity-link/neuralbank-stack/` | Demo NeuralBank (app de referencia OIDC) |
+| `rhbk` | `connectivity-link/rhbk/` | Despliegue de Keycloak |
+| `operators` | `connectivity-link/operators/` | Suscripciones de operadores |
+| `groups` | `connectivity-link/groups/` | Dominios, Sistemas, Usuarios, Grupos |
+
+### Inicio Rápido
+
+```bash
+# 1. Forkear el repositorio
+git clone https://gitlab.com/maximilianoPizarro/connectivity-link.git
+
+# 2. Login en OpenShift (cluster-admin requerido)
+oc login --token=<token> --server=https://api.<cluster>:6443
+
+# 3. Ejecutar el instalador automatizado (actualiza dominio, instala operadores, despliega todo)
+./install.sh
+
+# 4. Acceder a Developer Hub
+open https://developer-hub.apps.<cluster-domain>
+```
+
+El script instalador (`install.sh`) automatiza el despliegue completo: detecta el dominio del cluster, actualiza todas las referencias en los manifiestos, instala el operador OpenShift GitOps y aplica el `applicationset-instance.yaml` consolidado que despliega todos los componentes vía ArgoCD.
+
+> **Fuente:** [connectivity-link/developer-hub](https://gitlab.com/maximilianoPizarro/connectivity-link/-/tree/main/developer-hub) — Manifiestos de despliegue completos, configuración de plugins dinámicos, políticas RBAC y playbooks de Ansible.
+
 ---
 
 # 11. Observabilidad {#observabilidad}
@@ -1677,12 +1940,10 @@ flowchart TD
   G -- No --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>app-nfl-wallet-acm-cluster-decision.yaml <span class="yaml-badge yaml-badge--appset">ApplicationSet</span></summary>
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
+<pre><code class="language-yaml">apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: nfl-wallet
@@ -1707,36 +1968,30 @@ spec:
             chartVersion: "0.1.1"
   template:
     metadata:
-      name: 'nfl-wallet-{{env}}-{{name}}'
+      name: 'nfl-wallet-&#123;&#123;env&#125;&#125;-&#123;&#123;name&#125;&#125;'
     spec:
       project: default
       sources:
       - repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
         targetRevision: HEAD
-        path: 'nfl-wallet/overlays/{{env}}-{{name}}'
+        path: 'nfl-wallet/overlays/&#123;&#123;env&#125;&#125;-&#123;&#123;name&#125;&#125;'
       - repoURL: 'https://maximilianopizarro.github.io/NFL-Wallet'
         chart: nfl-wallet
-        targetRevision: '{{chartVersion}}'
+        targetRevision: '&#123;&#123;chartVersion&#125;&#125;'
       destination:
-        server: '{{server}}'
-        namespace: 'nfl-wallet-{{env}}'
+        server: '&#123;&#123;server&#125;&#125;'
+        namespace: 'nfl-wallet-&#123;&#123;env&#125;&#125;'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
         - CreateNamespace=true
-        - ServerSideApply=true
-```
-
+        - ServerSideApply=true</code></pre>
 </details>
-
-
 <details>
 <summary>app-kuadrant-resources.yaml <span class="yaml-badge yaml-badge--appset">ApplicationSet</span></summary>
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
+<pre><code class="language-yaml">apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: kuadrant-resources
@@ -1751,7 +2006,7 @@ spec:
         server: 'https://api.cluster-west:6443'
   template:
     metadata:
-      name: 'kuadrant-resources-{{cluster}}'
+      name: 'kuadrant-resources-&#123;&#123;cluster&#125;&#125;'
     spec:
       project: default
       source:
@@ -1759,23 +2014,17 @@ spec:
         targetRevision: HEAD
         path: kuadrant-system
       destination:
-        server: '{{server}}'
+        server: '&#123;&#123;server&#125;&#125;'
         namespace: kuadrant-system
       syncPolicy:
         automated:
           selfHeal: true
         syncOptions:
-        - ServerSideApply=true
-```
-
+        - ServerSideApply=true</code></pre>
 </details>
-
-
 <details>
 <summary>app-nfl-wallet-acm.yaml <span class="yaml-badge yaml-badge--patch">Placement</span></summary>
-
-```yaml
-apiVersion: cluster.open-cluster-management.io/v1beta1
+<pre><code class="language-yaml">apiVersion: cluster.open-cluster-management.io/v1beta1
 kind: Placement
 metadata:
   name: nfl-wallet-gitops-placement
@@ -1798,17 +2047,11 @@ spec:
     argoNamespace: openshift-gitops
   placementRef:
     kind: Placement
-    name: nfl-wallet-gitops-placement
-```
-
+    name: nfl-wallet-gitops-placement</code></pre>
 </details>
-
-
 <details>
 <summary>kuadrant-system/gateway-resources.yaml <span class="yaml-badge yaml-badge--patch">Manual Patch</span></summary>
-
-```yaml
-apiVersion: apps/v1
+<pre><code class="language-yaml">apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nfl-wallet-gateway-istio
@@ -1824,9 +2067,7 @@ spec:
             memory: 256Mi
           limits:
             cpu: "2"
-            memory: 1Gi
-```
-
+            memory: 1Gi</code></pre>
 </details>
 
 
@@ -1853,49 +2094,33 @@ flowchart TD
   R -- No --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>overlays/dev/namespace-mesh.yaml <span class="yaml-badge yaml-badge--ns">Namespace</span></summary>
-
-```yaml
-apiVersion: v1
+<pre><code class="language-yaml">apiVersion: v1
 kind: Namespace
 metadata:
   name: nfl-wallet-dev
   labels:
-    istio-injection: enabled
-```
-
+    istio-injection: enabled</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/namespace-mesh.yaml <span class="yaml-badge yaml-badge--ns">Namespace</span></summary>
-
-```yaml
-apiVersion: v1
+<pre><code class="language-yaml">apiVersion: v1
 kind: Namespace
 metadata:
   name: nfl-wallet-test
   labels:
-    istio.io/dataplane-mode: ambient
-```
-
+    istio.io/dataplane-mode: ambient</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/prod/namespace-mesh.yaml <span class="yaml-badge yaml-badge--ns">Namespace</span></summary>
-
-```yaml
-apiVersion: v1
+<pre><code class="language-yaml">apiVersion: v1
 kind: Namespace
 metadata:
   name: nfl-wallet-prod
   labels:
-    istio.io/dataplane-mode: ambient
-```
-
+    istio.io/dataplane-mode: ambient</code></pre>
 </details>
 
 
@@ -1921,12 +2146,10 @@ flowchart TD
   G -- No --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>overlays/test/nfl-wallet-espn-route.yaml <span class="yaml-badge yaml-badge--route">HTTPRoute</span></summary>
-
-```yaml
-apiVersion: gateway.networking.k8s.io/v1
+<pre><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: nfl-wallet-espn
@@ -1943,17 +2166,11 @@ spec:
         value: /public/nfl
     backendRefs:
     - name: api-bills
-      port: 8081
-```
-
+      port: 8081</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/auth-policy-patch.yaml <span class="yaml-badge yaml-badge--policy">AuthPolicy</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: nfl-wallet-gateway-auth
@@ -1979,17 +2196,11 @@ spec:
           content-type:
             value: application/json
         body:
-          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'
-```
-
+          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/api-keys-secret.yaml <span class="yaml-badge yaml-badge--secret">Secret</span></summary>
-
-```yaml
-apiVersion: v1
+<pre><code class="language-yaml">apiVersion: v1
 kind: Secret
 metadata:
   name: nfl-wallet-customers-key
@@ -1999,9 +2210,7 @@ metadata:
     authorino.kuadrant.io/managed-by: authorino
 stringData:
   api_key: changeme-test-key
-type: Opaque
-```
-
+type: Opaque</code></pre>
 </details>
 
 
@@ -2020,12 +2229,10 @@ flowchart TD
   E --> SKIP["SKIP: Manual"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>developer-hub/catalog-info.yaml <span class="yaml-badge yaml-badge--catalog">Backstage Catalog</span></summary>
-
-```yaml
-apiVersion: backstage.io/v1alpha1
+<pre><code class="language-yaml">apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: nfl-wallet-api-customers
@@ -2038,9 +2245,7 @@ spec:
   lifecycle: production
   owner: maximiliano-pizarro
   providesApis:
-  - nfl-wallet-customers-api
-```
-
+  - nfl-wallet-customers-api</code></pre>
 </details>
 
 
@@ -2062,12 +2267,10 @@ flowchart TD
   D -- No --> FAIL["FAIL: Unreachable"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>overlays/test/plan-policy.yaml <span class="yaml-badge yaml-badge--policy">RateLimitPolicy</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1beta2
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1beta2
 kind: RateLimitPolicy
 metadata:
   name: nfl-wallet-rate-limit
@@ -2089,17 +2292,11 @@ spec:
     bronze:
       rates:
       - limit: 100
-        window: 1d
-```
-
+        window: 1d</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/api-keys-secret.yaml <span class="yaml-badge yaml-badge--secret">Secret</span></summary>
-
-```yaml
-apiVersion: v1
+<pre><code class="language-yaml">apiVersion: v1
 kind: Secret
 metadata:
   name: nfl-wallet-customers-key
@@ -2109,17 +2306,11 @@ metadata:
     authorino.kuadrant.io/managed-by: authorino
 stringData:
   api_key: changeme-test-key
-type: Opaque
-```
-
+type: Opaque</code></pre>
 </details>
-
-
 <details>
 <summary>kuadrant-system/resource-requirements.yaml <span class="yaml-badge yaml-badge--patch">Authorino + Limitador</span></summary>
-
-```yaml
-apiVersion: operator.authorino.kuadrant.io/v1beta2
+<pre><code class="language-yaml">apiVersion: operator.authorino.kuadrant.io/v1beta2
 kind: Authorino
 metadata:
   name: authorino
@@ -2147,9 +2338,7 @@ spec:
       memory: 128Mi
     limits:
       cpu: "1"
-      memory: 256Mi
-```
-
+      memory: 256Mi</code></pre>
 </details>
 
 
@@ -2180,12 +2369,10 @@ flowchart TD
   M -- No --> W3["WARNING: Token OK, API non-200"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>overlays/test/auth-policy-patch.yaml <span class="yaml-badge yaml-badge--policy">AuthPolicy</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: nfl-wallet-gateway-auth
@@ -2211,17 +2398,11 @@ spec:
           content-type:
             value: application/json
         body:
-          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'
-```
-
+          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/api-keys-secret.yaml <span class="yaml-badge yaml-badge--secret">Secret</span></summary>
-
-```yaml
-apiVersion: v1
+<pre><code class="language-yaml">apiVersion: v1
 kind: Secret
 metadata:
   name: nfl-wallet-customers-key
@@ -2231,17 +2412,11 @@ metadata:
     authorino.kuadrant.io/managed-by: authorino
 stringData:
   api_key: changeme-test-key
-type: Opaque
-```
-
+type: Opaque</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/oidc-policy-customers.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: oidc-api-customers
@@ -2255,17 +2430,11 @@ spec:
     authentication:
       oidc-rhbk:
         jwt:
-          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
-```
-
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/oidc-policy-bills.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: oidc-api-bills
@@ -2279,17 +2448,11 @@ spec:
     authentication:
       oidc-rhbk:
         jwt:
-          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
-```
-
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/oidc-policy-raiders.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: oidc-api-raiders
@@ -2303,17 +2466,11 @@ spec:
     authentication:
       oidc-rhbk:
         jwt:
-          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
-```
-
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/prod/auth-policy-patch.yaml <span class="yaml-badge yaml-badge--policy">AuthPolicy</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: nfl-wallet-gateway-auth
@@ -2339,17 +2496,11 @@ spec:
           content-type:
             value: application/json
         body:
-          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'
-```
-
+          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/prod/api-keys-secret.yaml <span class="yaml-badge yaml-badge--secret">Secret</span></summary>
-
-```yaml
-apiVersion: v1
+<pre><code class="language-yaml">apiVersion: v1
 kind: Secret
 metadata:
   name: nfl-wallet-customers-key
@@ -2359,9 +2510,7 @@ metadata:
     authorino.kuadrant.io/managed-by: authorino
 stringData:
   api_key: changeme-prod-key
-type: Opaque
-```
-
+type: Opaque</code></pre>
 </details>
 
 
@@ -2391,44 +2540,30 @@ flowchart TD
   L -- Neither --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>overlays/dev-east/kustomization.yaml <span class="yaml-badge yaml-badge--ns">Kustomization</span></summary>
-
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
+<pre><code class="language-yaml">apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: nfl-wallet-dev
 resources:
 - ../dev
 patches:
-- path: route-patch.yaml
-```
-
+- path: route-patch.yaml</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/dev-west/kustomization.yaml <span class="yaml-badge yaml-badge--ns">Kustomization</span></summary>
-
-```yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
+<pre><code class="language-yaml">apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: nfl-wallet-dev
 resources:
 - ../dev
 patches:
-- path: route-patch.yaml
-```
-
+- path: route-patch.yaml</code></pre>
 </details>
-
-
 <details>
 <summary>base/gateway-route.yaml <span class="yaml-badge yaml-badge--route">Route</span></summary>
-
-```yaml
-apiVersion: route.openshift.io/v1
+<pre><code class="language-yaml">apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: nfl-wallet
@@ -2438,9 +2573,7 @@ spec:
     name: nfl-wallet-gateway-istio
   tls:
     termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-```
-
+    insecureEdgeTerminationPolicy: Redirect</code></pre>
 </details>
 
 
@@ -2469,12 +2602,10 @@ flowchart TD
   L -- No --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>app-observability-east-west.yaml <span class="yaml-badge yaml-badge--appset">ApplicationSet</span></summary>
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
+<pre><code class="language-yaml">apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: observability-east-west
@@ -2489,7 +2620,7 @@ spec:
         server: 'https://api.cluster-west:6443'
   template:
     metadata:
-      name: 'observability-{{cluster}}'
+      name: 'observability-&#123;&#123;cluster&#125;&#125;'
     spec:
       project: default
       source:
@@ -2497,23 +2628,17 @@ spec:
         targetRevision: HEAD
         path: nfl-wallet-observability
       destination:
-        server: '{{server}}'
+        server: '&#123;&#123;server&#125;&#125;'
         namespace: nfl-wallet-observability
       syncPolicy:
         automated:
           selfHeal: true
         syncOptions:
-        - CreateNamespace=true
-```
-
+        - CreateNamespace=true</code></pre>
 </details>
-
-
 <details>
 <summary>nfl-wallet-observability/prometheus-route.yaml <span class="yaml-badge yaml-badge--route">Route</span></summary>
-
-```yaml
-apiVersion: route.openshift.io/v1
+<pre><code class="language-yaml">apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: promxy
@@ -2523,9 +2648,7 @@ spec:
     kind: Service
     name: promxy
   tls:
-    termination: edge
-```
-
+    termination: edge</code></pre>
 </details>
 
 
@@ -2551,12 +2674,10 @@ flowchart TD
   R -- No --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>base/gateway-route.yaml <span class="yaml-badge yaml-badge--route">Route</span></summary>
-
-```yaml
-apiVersion: route.openshift.io/v1
+<pre><code class="language-yaml">apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: nfl-wallet
@@ -2566,17 +2687,11 @@ spec:
     name: nfl-wallet-gateway-istio
   tls:
     termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-```
-
+    insecureEdgeTerminationPolicy: Redirect</code></pre>
 </details>
-
-
 <details>
 <summary>app-nfl-wallet-acm-cluster-decision.yaml <span class="yaml-badge yaml-badge--helm">Helm chart</span></summary>
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
+<pre><code class="language-yaml">apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: nfl-wallet
@@ -2601,28 +2716,26 @@ spec:
             chartVersion: "0.1.1"
   template:
     metadata:
-      name: 'nfl-wallet-{{env}}-{{name}}'
+      name: 'nfl-wallet-&#123;&#123;env&#125;&#125;-&#123;&#123;name&#125;&#125;'
     spec:
       project: default
       sources:
       - repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
         targetRevision: HEAD
-        path: 'nfl-wallet/overlays/{{env}}-{{name}}'
+        path: 'nfl-wallet/overlays/&#123;&#123;env&#125;&#125;-&#123;&#123;name&#125;&#125;'
       - repoURL: 'https://maximilianopizarro.github.io/NFL-Wallet'
         chart: nfl-wallet
-        targetRevision: '{{chartVersion}}'
+        targetRevision: '&#123;&#123;chartVersion&#125;&#125;'
       destination:
-        server: '{{server}}'
-        namespace: 'nfl-wallet-{{env}}'
+        server: '&#123;&#123;server&#125;&#125;'
+        namespace: 'nfl-wallet-&#123;&#123;env&#125;&#125;'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
         - CreateNamespace=true
-        - ServerSideApply=true
-```
-
+        - ServerSideApply=true</code></pre>
 </details>
 
 
@@ -2645,12 +2758,10 @@ flowchart TD
   F -- No --> FAIL["FAIL: Too many errors"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>overlays/test/plan-policy.yaml <span class="yaml-badge yaml-badge--policy">RateLimitPolicy</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1beta2
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1beta2
 kind: RateLimitPolicy
 metadata:
   name: nfl-wallet-rate-limit
@@ -2672,17 +2783,11 @@ spec:
     bronze:
       rates:
       - limit: 100
-        window: 1d
-```
-
+        window: 1d</code></pre>
 </details>
-
-
 <details>
 <summary>kuadrant-system/resource-requirements.yaml <span class="yaml-badge yaml-badge--patch">Authorino + Limitador</span></summary>
-
-```yaml
-apiVersion: operator.authorino.kuadrant.io/v1beta2
+<pre><code class="language-yaml">apiVersion: operator.authorino.kuadrant.io/v1beta2
 kind: Authorino
 metadata:
   name: authorino
@@ -2710,17 +2815,11 @@ spec:
       memory: 128Mi
     limits:
       cpu: "1"
-      memory: 256Mi
-```
-
+      memory: 256Mi</code></pre>
 </details>
-
-
 <details>
 <summary>kuadrant-system/gateway-resources.yaml <span class="yaml-badge yaml-badge--patch">Gateway Proxy</span></summary>
-
-```yaml
-apiVersion: apps/v1
+<pre><code class="language-yaml">apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nfl-wallet-gateway-istio
@@ -2736,9 +2835,7 @@ spec:
             memory: 256Mi
           limits:
             cpu: "2"
-            memory: 1Gi
-```
-
+            memory: 1Gi</code></pre>
 </details>
 
 
@@ -2766,12 +2863,10 @@ flowchart TD
   K -- No --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>app-nfl-wallet-acm-cluster-decision.yaml <span class="yaml-badge yaml-badge--helm">RHBK Helm values</span></summary>
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
+<pre><code class="language-yaml">apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: nfl-wallet
@@ -2796,36 +2891,30 @@ spec:
             chartVersion: "0.1.1"
   template:
     metadata:
-      name: 'nfl-wallet-{{env}}-{{name}}'
+      name: 'nfl-wallet-&#123;&#123;env&#125;&#125;-&#123;&#123;name&#125;&#125;'
     spec:
       project: default
       sources:
       - repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
         targetRevision: HEAD
-        path: 'nfl-wallet/overlays/{{env}}-{{name}}'
+        path: 'nfl-wallet/overlays/&#123;&#123;env&#125;&#125;-&#123;&#123;name&#125;&#125;'
       - repoURL: 'https://maximilianopizarro.github.io/NFL-Wallet'
         chart: nfl-wallet
-        targetRevision: '{{chartVersion}}'
+        targetRevision: '&#123;&#123;chartVersion&#125;&#125;'
       destination:
-        server: '{{server}}'
-        namespace: 'nfl-wallet-{{env}}'
+        server: '&#123;&#123;server&#125;&#125;'
+        namespace: 'nfl-wallet-&#123;&#123;env&#125;&#125;'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
         - CreateNamespace=true
-        - ServerSideApply=true
-```
-
+        - ServerSideApply=true</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/oidc-policy-customers.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: oidc-api-customers
@@ -2839,17 +2928,11 @@ spec:
     authentication:
       oidc-rhbk:
         jwt:
-          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
-```
-
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/oidc-policy-bills.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: oidc-api-bills
@@ -2863,17 +2946,11 @@ spec:
     authentication:
       oidc-rhbk:
         jwt:
-          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
-```
-
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface</code></pre>
 </details>
-
-
 <details>
 <summary>overlays/test/oidc-policy-raiders.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
-
-```yaml
-apiVersion: kuadrant.io/v1
+<pre><code class="language-yaml">apiVersion: kuadrant.io/v1
 kind: AuthPolicy
 metadata:
   name: oidc-api-raiders
@@ -2887,9 +2964,7 @@ spec:
     authentication:
       oidc-rhbk:
         jwt:
-          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
-```
-
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface</code></pre>
 </details>
 
 
@@ -2919,12 +2994,10 @@ flowchart TD
   M -- Error --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>overlays/prod/canary-httproute.yaml <span class="yaml-badge yaml-badge--route">HTTPRoute</span></summary>
-
-```yaml
-apiVersion: gateway.networking.k8s.io/v1
+<pre><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: nfl-wallet-webapp-canary
@@ -2941,17 +3014,11 @@ spec:
         value: /
     backendRefs:
     - name: webapp
-      port: 5173
-```
-
+      port: 5173</code></pre>
 </details>
-
-
 <details>
 <summary>base-canary/canary-route.yaml <span class="yaml-badge yaml-badge--route">Route</span></summary>
-
-```yaml
-apiVersion: route.openshift.io/v1
+<pre><code class="language-yaml">apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
   name: nfl-wallet-canary
@@ -2962,9 +3029,7 @@ spec:
     name: nfl-wallet-gateway-istio
   tls:
     termination: edge
-    insecureEdgeTerminationPolicy: Redirect
-```
-
+    insecureEdgeTerminationPolicy: Redirect</code></pre>
 </details>
 
 
@@ -2995,12 +3060,10 @@ flowchart TD
   R -- No --> FAIL["FAIL"]
 ```
 
-<div class="yaml-resources">
+<div class="yaml-resources" markdown="0">
 <details>
 <summary>app-nfl-wallet-acm-cluster-decision.yaml <span class="yaml-badge yaml-badge--helm">rhbk.resources</span></summary>
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
+<pre><code class="language-yaml">apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
   name: nfl-wallet
@@ -3025,36 +3088,30 @@ spec:
             chartVersion: "0.1.1"
   template:
     metadata:
-      name: 'nfl-wallet-{{env}}-{{name}}'
+      name: 'nfl-wallet-&#123;&#123;env&#125;&#125;-&#123;&#123;name&#125;&#125;'
     spec:
       project: default
       sources:
       - repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
         targetRevision: HEAD
-        path: 'nfl-wallet/overlays/{{env}}-{{name}}'
+        path: 'nfl-wallet/overlays/&#123;&#123;env&#125;&#125;-&#123;&#123;name&#125;&#125;'
       - repoURL: 'https://maximilianopizarro.github.io/NFL-Wallet'
         chart: nfl-wallet
-        targetRevision: '{{chartVersion}}'
+        targetRevision: '&#123;&#123;chartVersion&#125;&#125;'
       destination:
-        server: '{{server}}'
-        namespace: 'nfl-wallet-{{env}}'
+        server: '&#123;&#123;server&#125;&#125;'
+        namespace: 'nfl-wallet-&#123;&#123;env&#125;&#125;'
       syncPolicy:
         automated:
           prune: true
           selfHeal: true
         syncOptions:
         - CreateNamespace=true
-        - ServerSideApply=true
-```
-
+        - ServerSideApply=true</code></pre>
 </details>
-
-
 <details>
 <summary>kuadrant-system/resource-requirements.yaml <span class="yaml-badge yaml-badge--patch">Authorino + Limitador</span></summary>
-
-```yaml
-apiVersion: operator.authorino.kuadrant.io/v1beta2
+<pre><code class="language-yaml">apiVersion: operator.authorino.kuadrant.io/v1beta2
 kind: Authorino
 metadata:
   name: authorino
@@ -3082,17 +3139,11 @@ spec:
       memory: 128Mi
     limits:
       cpu: "1"
-      memory: 256Mi
-```
-
+      memory: 256Mi</code></pre>
 </details>
-
-
 <details>
 <summary>kuadrant-system/gateway-resources.yaml <span class="yaml-badge yaml-badge--patch">Gateway Proxy</span></summary>
-
-```yaml
-apiVersion: apps/v1
+<pre><code class="language-yaml">apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nfl-wallet-gateway-istio
@@ -3108,9 +3159,7 @@ spec:
             memory: 256Mi
           limits:
             cpu: "2"
-            memory: 1Gi
-```
-
+            memory: 1Gi</code></pre>
 </details>
 
 
