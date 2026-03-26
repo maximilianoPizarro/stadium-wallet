@@ -194,12 +194,54 @@ graph TD
     Apps --> West
 ```
 
-## 2.4 ESPN API Integration
+## 2.4 Application Flow Diagram
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant W as WebApp
+    participant C as ApiCustomers
+    participant B as ApiWalletBuffaloBills
+    participant R as ApiWalletLasVegasRaiders
+
+    U->>W: Open app (Home)
+    W->>C: GET /api/Customers
+    C-->>W: List of customers
+    W-->>U: Show customer list
+
+    U->>W: Click customer
+    W->>C: GET /api/Customers/{id}
+    W->>B: GET /api/Wallet/balance/{customerId}
+    W->>B: GET /api/Wallet/transactions/{customerId}
+    W->>R: GET /api/Wallet/balance/{customerId}
+    W->>R: GET /api/Wallet/transactions/{customerId}
+
+    C-->>W: Customer details
+    B-->>W: Buffalo Bills balance + transactions
+    R-->>W: Las Vegas Raiders balance + transactions
+
+    W-->>U: Customer + Buffalo Bills + Las Vegas Raiders wallets
+```
+
+## 2.5 User Flow
+
+```mermaid
+flowchart LR
+    A[Landing: Customer list] --> B[Select customer]
+    B --> C[Customer wallets page]
+    C --> D[Buffalo Bills wallet]
+    C --> E[Las Vegas Raiders wallet]
+    D --> F[Balance & transactions]
+    E --> F
+```
+
+## 2.6 ESPN API Integration
 
 The `api-bills` and `api-raiders` microservices require real-time sports data.
 
 - **Endpoint:** `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard`
 - **Egress Management:** OSSM3 Ambient Mode intercepts outbound HTTP requests via the node's ztunnel, enabling latency monitoring and egress policy enforcement without the performance penalty of sidecar container injection.
+- **ESPN API Key (Connectivity Link):** When the ESPN endpoint is proxied through a Gateway secured with Connectivity Link, the Helm chart accepts `espn.apiKey` and `espn.apiUrl` values so the ticker can authenticate through the policy layer.
 
 ---
 
@@ -326,6 +368,16 @@ helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet
 | `apiKeys.enabled` | Create Secret and inject API keys | `false` |
 | `authorizationPolicy.enabled` | Istio AuthorizationPolicy for X-API-Key | `false` |
 | `observability.rhobs.enabled` | RHOBS resources (ThanosQuerier, PodMonitor, UIPlugin) | `false` |
+| `rhbk-neuroface.enabled` | Deploy RHBK with NeuroFace biometric 2FA | `false` |
+| `webapp.keycloakUrl` | RHBK base URL for Keycloak-js | — |
+| `webapp.keycloakRealm` | Keycloak realm name | `neuroface` |
+| `rhbk-neuroface.biometric.confidenceThreshold` | Facial match confidence % | `65` |
+| `rhbk-neuroface.biometric.maxEnrollmentImages` | Enrollment captures | `5` |
+| `rhbk-neuroface.biometric.cameraWidth` | Camera width px | `640` |
+| `rhbk-neuroface.biometric.cameraHeight` | Camera height px | `480` |
+| `espn.apiKey` | ESPN API key for Connectivity Link gateway | — |
+| `espn.apiUrl` | ESPN proxy path | `/public/nfl` |
+| `gateway.oidcPolicy` | Enable OIDC AuthPolicy per HTTPRoute (test) | `false` |
 
 ## 5.4 Apply the ArgoCD Root Application
 
@@ -698,15 +750,49 @@ spec:
 
 Stadium Wallet implements a **progressive security strategy** where each environment increases the level of protection. This allows rapid iteration in development, integration validation in test, and full Zero Trust in production:
 
-| Environment | API Key | AuthPolicy | Mesh Model |
-|-------------|---------|------------|------------|
-| **Dev** | Not required | No authentication | Sidecar mode (`istio-injection: enabled`) |
-| **Test** | `nfl-wallet-customers-key` | AuthPolicy + API keys | Ambient mode (`istio.io/dataplane-mode: ambient`) |
-| **Prod** | `nfl-wallet-customers-key` | AuthPolicy + API keys + canary route | Ambient mode + Waypoint proxies |
+| Environment | API Key | AuthPolicy | Biometric Login | Mesh Model |
+|-------------|---------|------------|-----------------|------------|
+| **Dev** | Not required | No authentication | RHBK + NeuroFace (chart 0.1.3) | Sidecar mode (`istio-injection: enabled`) |
+| **Test** | `nfl-wallet-customers-key` | AuthPolicy + API keys + OIDC policy | RHBK + NeuroFace (chart 0.1.3) | Ambient mode (`istio.io/dataplane-mode: ambient`) |
+| **Prod** | `nfl-wallet-customers-key` | AuthPolicy + API keys + canary route | — (chart 0.1.1) | Ambient mode + Waypoint proxies |
 
-- **Dev without auth** allows developers to iterate quickly without managing credentials, focusing on business logic
-- **Test with auth** validates that Authorino and API Key integration works correctly before reaching production
+- **Dev with biometric login** allows developers to test the RHBK + NeuroFace facial authentication flow without API key restrictions
+- **Test with auth + OIDC** validates both API Key and OIDC/JWT authentication models — Kuadrant AuthPolicy objects target individual HTTPRoutes and validate tokens issued by the RHBK realm
 - **Prod with auth + canary + ambient** guarantees full Zero Trust: mTLS on all inter-service traffic, credential validation at the Gateway, rate limiting by Tier, and canary deployment capability for safe rollouts
+
+### Biometric Authentication (RHBK + NeuroFace)
+
+Chart version **0.1.3** includes **Red Hat build of Keycloak (RHBK)** with **NeuroFace** biometric facial authentication as an optional dependency. Users authenticate with username/password followed by facial recognition as second factor.
+
+The chart pre-loads the realm with 7 mock customer accounts (matching the Customers API seed data). On first login each user must complete biometric enrollment (facial capture). Subsequent logins use facial verification as second factor.
+
+```bash
+helm install nfl-wallet ./helm/nfl-wallet -n nfl-wallet \
+  --set "rhbk-neuroface.enabled=true" \
+  --set "webapp.keycloakUrl=https://<release>-rhbk-neuroface-<namespace>.apps.<cluster>"
+```
+
+> **Note:** `keycloakUrl` must be the RHBK base URL without `/realms/<name>` — keycloak-js appends the realm path automatically from `webapp.keycloakRealm` (default `neuroface`).
+
+Biometric parameters are tunable via Helm values:
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `confidenceThreshold` | Facial match confidence % | `65` |
+| `maxEnrollmentImages` | Enrollment captures | `5` |
+| `cameraWidth` × `cameraHeight` | Camera resolution | `640` × `480` |
+
+Camera resolution presets: **QVGA** 320×240, **VGA** 640×480 (default), **HD 720p** 1280×720, **Full HD** 1920×1080. Higher resolution improves accuracy but increases processing time. The ApplicationSet enables biometric login for **dev** and **test** with **1920 × 1080** (FHD).
+
+### OIDC Policy (Test Environment)
+
+In **test**, the chart's `gateway.oidcPolicy` is enabled. This creates Kuadrant `AuthPolicy` objects (one per API HTTPRoute) that validate OIDC JWT tokens issued by the RHBK realm. The OIDC policies target individual HTTPRoutes (`api-customers`, `api-bills`, `api-raiders`) and coexist with the existing **API key AuthPolicy** on the Gateway.
+
+The OIDC issuer URL follows the pattern:
+
+```
+https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.<cluster-domain>/realms/neuroface
+```
 
 ## 8.5 Namespace Access Restriction (Test / Prod) {#namespace-isolation}
 
@@ -1145,13 +1231,15 @@ kubectl apply -f app-nfl-wallet-east.yaml -n openshift-gitops
 kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 ```
 
-## 9.2 Environments and Namespaces
+## 9.2 Environments, Chart Versions and Namespaces
 
-| Environment | Namespace |
-|-------------|-----------|
-| Dev | `nfl-wallet-dev` |
-| Test | `nfl-wallet-test` |
-| Prod | `nfl-wallet-prod` |
+Each Application deploys **two sources**: (1) Kustomize overlays (namespace, Route, AuthPolicy, Secrets) and (2) the **Stadium Wallet Helm chart** from the HelmChartRepository.
+
+| Environment | Namespace | Chart Version | Features |
+|-------------|-----------|---------------|----------|
+| Dev | `nfl-wallet-dev` | **0.1.3** | Gateway route + RHBK biometric login (NeuroFace) |
+| Test | `nfl-wallet-test` | **0.1.3** | Gateway + AuthPolicy + API keys + ESPN route + RHBK biometric login + OIDC policy |
+| Prod | `nfl-wallet-prod` | **0.1.1** | Gateway + canary + AuthPolicy + API keys (no biometric login) |
 
 ## 9.3 Kustomize Overlay Structure
 
@@ -1180,11 +1268,39 @@ kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
 │   ├── base/                                 # gateway route
 │   ├── base-canary/                          # canary route (prod)
 │   └── overlays/                             # dev, test, prod + east/west
+├── kuadrant-system/                           # Authorino/Limitador resource patches
 ├── nfl-wallet-observability/                 # Grafana + ServiceMonitors
 ├── observability/                            # Grafana Operator base
+├── developer-hub/catalog/nfl-wallet/         # Backstage catalog (Domain, System, Components, APIs)
 ├── docs/                                     # Documentation
 └── scripts/                                  # force-sync-apps, test-apis, etc.
 ```
+
+## 9.5 Kuadrant Resource Requirements
+
+Default operator resources (100m CPU / 32Mi RAM) cause **20s+ latency** on the ext-authz call from the gateway to Authorino, especially in sandboxes with mTLS enabled. The `kuadrant-resources` ApplicationSet deploys resource patches to both clusters using `ServerSideApply`:
+
+```bash
+kubectl apply -f app-kuadrant-resources.yaml -n openshift-gitops
+```
+
+| Component | CPU Request | Memory Request | CPU Limit | Memory Limit |
+|-----------|-------------|----------------|-----------|--------------|
+| **Authorino** | 500m | 256Mi | 2 | 1Gi |
+| **Limitador** | 250m | 128Mi | 1 | 256Mi |
+
+Resources are in `kuadrant-system/` (Kustomize). ArgoCD uses `selfHeal: true` so they are reapplied if operators reset them.
+
+> **Gateway proxy:** The `nfl-wallet-gateway-istio` Deployment is tracked by the nfl-wallet ArgoCD Application (Istio creates it from the Helm chart Gateway). Including it in `kuadrant-resources` causes `SharedResourceWarning`. If gateway proxy resources are too low, apply manually: `kubectl apply -f kuadrant-system/gateway-resources.yaml`.
+
+## 9.6 Canary Testing (0.1.3 on Prod)
+
+To test chart **0.1.3** with biometric login in a production context:
+
+1. Change `chartVersion` from `"0.1.1"` to `"0.1.3"` for the prod entry in the ApplicationSet
+2. Add the RHBK Helm values (copy from the dev/test conditional block)
+3. Push and let ArgoCD sync. Access the canary URL to verify the biometric login
+4. If approved, keep `0.1.3`. If not, revert `chartVersion` to `"0.1.1"` and push again
 
 **ArgoCD as the reconciliation engine:** The following screenshots show how ArgoCD manages the Applications generated by the ApplicationSet. Each Application corresponds to an environment/cluster combination and syncs independently, enabling selective rollbacks per environment without affecting the rest.
 
@@ -1544,12 +1660,17 @@ Once ArgoCD synchronization is complete, the QA or Operations team must execute 
 | QA-02 | Ambient Mesh | Run `oc get pods -n nfl-wallet`. Confirm pods have only 1 container (no sidecar) | Pods show `1/1 READY` | <span class="rh-tag rh-tag--green">Passed</span> |
 | QA-03 | Egress (ESPN) | Access frontend pod or invoke `/api/bills/scoreboard` | Valid JSON with scores from ESPN | <span class="rh-tag rh-tag--green">Passed</span> |
 | QA-04 | RHDH Portal | Navigate to Developer Hub, search `nfl-wallet-api-customers` and view OpenAPI docs | Swagger/OpenAPI spec renders correctly | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-05 | Rate Limiting | Generate a temp API Key (Silver Tier). Loop 505 HTTP GET requests to `/api/customers` | Request 501 must return **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-06 | AuthPolicy | Send request without `X-API-Key` to `/api-bills` endpoint (test/prod) | Response **HTTP 403** with JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-05 | Rate Limiting | Generate a temp API Key (Silver Tier). Loop 505 HTTP GET requests to `/api/customers` with `X-Api-Key` header | Request 501 must return **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-06 | AuthPolicy | Send request without `X-Api-Key` to `/api-bills` endpoint (test/prod) | Response **HTTP 403** with JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--green">Passed</span> |
 | QA-07 | Cross-Cluster | From webapp (East), query a customer's balance aggregating `api-bills` (East) and `api-raiders` (West) | UI displays balances from both teams correctly | <span class="rh-tag rh-tag--green">Passed</span> |
 | QA-08 | Observability | Verify in Grafana that `istio_requests_total` metrics are received from both clusters | Dashboard shows data from East and West | <span class="rh-tag rh-tag--green">Passed</span> |
 | QA-09 | Swagger UI | Navigate to `/api/swagger` for each API (api-customers, api-bills, api-raiders) | Swashbuckle UI renders correctly with documented endpoints | <span class="rh-tag rh-tag--green">Passed</span> |
 | QA-10 | Load Test | Run `./generate-traffic-realistic.sh --workers 20 --interval 1` | RateLimitPolicies enforce 100 req/min quota; excess traffic gets 429 | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-11 | Biometric Login (Dev) | Navigate to webapp in `nfl-wallet-dev`. Click login and authenticate with username/password + facial recognition | RHBK login completes; user redirected to wallet UI with authenticated session | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-12 | Biometric Enrollment | First login with a new user — complete facial enrollment (5 captures at FHD 1920×1080) | Enrollment succeeds; subsequent logins use facial verification as 2FA | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-13 | OIDC Policy (Test) | Authenticate via RHBK in `nfl-wallet-test`. Access `/api/customers` with the OIDC JWT token | Request succeeds with valid JWT; request without token returns **HTTP 401** | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-14 | Canary Route | Access `nfl-wallet-canary.apps.<cluster-domain>` in prod | Canary version responds correctly; stable route unaffected | <span class="rh-tag rh-tag--green">Passed</span> |
+| QA-15 | Kuadrant Resources | Verify Authorino latency after applying resource patches (`kuadrant-system/`) | ext-authz response time drops from ~20s to <500ms | <span class="rh-tag rh-tag--green">Passed</span> |
 
 ## 13.2 Rate Limiting Test Script (QA-05)
 
@@ -1557,8 +1678,8 @@ Once ArgoCD synchronization is complete, the QA or Operations team must execute 
 # Validate Silver limit (500/day)
 for i in {1..505}; do
   STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-    -H "Authorization: Bearer $API_KEY" \
-    https://api.nfl-wallet.mydomain.com/api/customers)
+    -H "X-Api-Key: $API_KEY" \
+    https://<api-customers-route>/api/customers)
   echo "Request $i: HTTP Code $STATUS_CODE"
 done
 # Last 5 requests should show "HTTP Code 429"
@@ -1581,6 +1702,34 @@ scripts/test-apis.sh
 
 1. **Customer List:** Verify the frontend successfully receives the customer list from `api-customers`
 2. **Cross-Cluster Balance:** Select a profile and verify the UI aggregates balances from `api-bills` (East) and `api-raiders` (West) — confirms the cross-cluster federation backbone
+
+## 13.5 Biometric Login Flow (QA-11 / QA-12)
+
+1. Navigate to the webapp route in `nfl-wallet-dev` or `nfl-wallet-test`
+2. Click the **Login** button — redirects to RHBK login page
+3. Enter username/password (one of the 7 pre-loaded accounts)
+4. **First login:** complete biometric enrollment — the camera captures facial images (configurable: 5 captures by default at the resolution set in Helm values)
+5. **Subsequent logins:** facial verification as second factor
+6. After successful authentication, the user is redirected to the wallet UI with an active Keycloak session
+
+## 13.6 OIDC JWT Validation (QA-13)
+
+In `nfl-wallet-test`, the OIDC policy creates Kuadrant `AuthPolicy` objects per HTTPRoute. To test:
+
+```bash
+# Obtain a JWT token from RHBK
+TOKEN=$(curl -s -X POST \
+  "https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.<cluster>/realms/neuroface/protocol/openid-connect/token" \
+  -d "grant_type=password&client_id=nfl-wallet&username=<user>&password=<pass>" \
+  | jq -r '.access_token')
+
+# Access API with OIDC token
+curl -H "Authorization: Bearer $TOKEN" \
+  https://<api-customers-route>/api/customers
+
+# Without token — expect 401
+curl -v https://<api-customers-route>/api/customers
+```
 
 ---
 
