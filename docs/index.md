@@ -97,6 +97,7 @@ The microservices interact with external data sources (**ESPN API**) securely an
 | [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift) | Quick start guide on Red Hat Developer |
 | [OSSM3 Ambient Mode — Multi-Cluster Demo](https://github.com/panchoraposo/ossm3-ambient-mode) | Francisco Raposo's repo: Ansible playbooks for OSSM3, Bookinfo and multi-cluster observability |
 | [Connectivity Link — Developer Hub Deployment](https://gitlab.com/maximilianoPizarro/connectivity-link/-/tree/main/developer-hub) | GitOps deployment of RHDH on Red Hat Developer Sandbox with Kuadrant, Keycloak, MCP and RBAC |
+| [Stadium Wallet GitOps — Documentation Site](https://maximilianopizarro.github.io/nfl-wallet-gitops/) | Operational guides: architecture, getting started, ACM deploy, gateway policies, QA scripts |
 | [RHBK NeuroFace Biometric Flow](https://maximilianopizarro.github.io/rhbk-biometric-flow/) | RHBK 26.0 with biometric facial 2FA via NeuroFace SPI — Helm chart, demo videos and architecture |
 | [NeuroFace — Facial Recognition Service](https://github.com/maximilianoPizarro/neuroface) | FastAPI + Angular 17 facial recognition webapp with OpenCV LBPH / dlib |
 
@@ -1458,6 +1459,77 @@ To test chart **0.1.3** with biometric login in a production context:
 
 [![ACM Apps Overview]({{ '/images/acm-apps.png' | relative_url }})]({{ '/images/acm-apps.png' | relative_url }}){: .doc-img-link}
 <span class="img-caption">ACM — Overview of applications deployed on managed clusters.</span>
+
+## 9.7 GitOps Repository Documentation Site
+
+The [Stadium Wallet GitOps documentation site](https://maximilianopizarro.github.io/nfl-wallet-gitops/) provides detailed, step-by-step guides for every aspect of the GitOps deployment. It complements this document with operational runbooks and environment-specific instructions.
+
+### Available Guides
+
+| Guide | Description |
+|-------|-------------|
+| [Architecture](https://maximilianopizarro.github.io/nfl-wallet-gitops/architecture.html) | Placement, ApplicationSet matrix, multi-cluster topology (ACM and standalone) |
+| [Getting Started](https://maximilianopizarro.github.io/nfl-wallet-gitops/getting-started.html) | Prerequisites, clone, verify Kustomize, deploy east/west or ACM — 10-step walkthrough |
+| [ARGO-ACM-DEPLOY](https://maximilianopizarro.github.io/nfl-wallet-gitops/ARGO-ACM-DEPLOY.html) | ACM logic: ManagedClusterSetBinding, Placement, GitOpsCluster, application order |
+| [Gateway Policies](https://maximilianopizarro.github.io/nfl-wallet-gitops/gateway-policies.html) | AuthPolicy (API key), RateLimitPolicy, OIDC policy, RHBK biometric login, canary route |
+| [Observability](https://maximilianopizarro.github.io/nfl-wallet-gitops/observability.html) | Grafana Operator, ServiceMonitors, `run-tests.sh` traffic scripts |
+| [QA Test Plan](https://maximilianopizarro.github.io/nfl-wallet-gitops/qa-test-plan.html) | Automated `qa-test-plan.sh` — 10 end-to-end tests (GitOps sync, mesh, auth, rate limiting, cross-cluster) |
+| [QA Diagrams](https://maximilianopizarro.github.io/nfl-wallet-gitops/qa-diagrams.html) | Visual Mermaid flowcharts for each QA test case with YAML resource references |
+| [ApplicationSet](https://maximilianopizarro.github.io/nfl-wallet-gitops/applicationset.html) | ApplicationSet YAML reference and matrix generator details |
+| [Troubleshooting](https://maximilianopizarro.github.io/nfl-wallet-gitops/troubleshooting.html) | Common issues: ApplicationSet RBAC, OutOfSync, 503 errors, CSR approval |
+
+### Deployment Modes
+
+The site documents two deployment modes, each with its own getting-started path:
+
+**With ACM (Hub + Managed Clusters):**
+
+```bash
+# 1. Placements + GitOpsCluster (creates east/west secrets in ArgoCD)
+kubectl apply -f app-nfl-wallet-acm.yaml -n openshift-gitops
+
+# 2. ApplicationSet (generates 6 Applications: dev/test/prod × east/west)
+kubectl apply -f app-nfl-wallet-acm-cluster-decision.yaml -n openshift-gitops
+
+# 3. Kuadrant resource patches (Authorino, Limitador scaling)
+kubectl apply -f app-kuadrant-resources.yaml -n openshift-gitops
+```
+
+**Without ACM (Independent East/West):**
+
+```bash
+kubectl apply -f app-nfl-wallet-east.yaml -n openshift-gitops
+kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
+```
+
+### Gateway Policies by Environment
+
+The site details how Kustomize overlays apply different security policies per environment:
+
+| Environment | Overlay Contents | Chart |
+|-------------|-----------------|-------|
+| **Dev** | Gateway route, namespace-mesh (`istio-injection`), RHBK biometric login | 0.1.3 |
+| **Test** | Gateway route, AuthPolicy, API keys, ESPN route, PlanPolicy, RHBK biometric login, OIDC policy | 0.1.3 |
+| **Prod** | Gateway route, canary route, AuthPolicy, API keys, PlanPolicy (no biometric) | 0.1.1 |
+
+The OIDC policy in test creates Kuadrant `AuthPolicy` objects per API HTTPRoute that validate JWT tokens from the RHBK realm, coexisting with the existing API key AuthPolicy on the Gateway.
+
+### Automated QA Script
+
+The `qa-test-plan.sh` script runs the full test suite from the hub cluster against both east and west:
+
+```bash
+export CLUSTER_DOMAIN_EAST="cluster-east.sandbox.opentlc.com"
+export CLUSTER_DOMAIN_WEST="cluster-west.sandbox.opentlc.com"
+export API_KEY_TEST="nfl-wallet-customers-key"
+export API_KEY_PROD="nfl-wallet-customers-key"
+
+./scripts/qa-test-plan.sh
+```
+
+The script validates GitOps sync, ambient mesh enrollment, ESPN egress, rate limiting, AuthPolicy enforcement, cross-cluster reachability, observability stack health, Swagger UI, RHBK NeuroFace endpoints, and resource scaling — producing a PASS/FAIL report for each test case.
+
+> **Source:** [Stadium Wallet GitOps — Documentation Site](https://maximilianopizarro.github.io/nfl-wallet-gitops/) — Complete operational guides, architecture diagrams, and automated QA scripts.
 
 ---
 

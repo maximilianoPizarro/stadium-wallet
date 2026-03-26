@@ -97,6 +97,7 @@ Los microservicios interactúan con fuentes de datos externas (**API de ESPN**) 
 | [Getting Started with Connectivity Link on OpenShift](https://developers.redhat.com/articles/2024/06/12/getting-started-red-hat-connectivity-link-openshift) | Guía de inicio rápido en Red Hat Developer |
 | [OSSM3 Ambient Mode — Multi-Cluster Demo](https://github.com/panchoraposo/ossm3-ambient-mode) | Repo de Francisco Raposo: Ansible playbooks para OSSM3, Bookinfo y observabilidad multi-cluster |
 | [Connectivity Link — Developer Hub Deployment](https://gitlab.com/maximilianoPizarro/connectivity-link/-/tree/main/developer-hub) | Despliegue GitOps de RHDH en Red Hat Developer Sandbox con Kuadrant, Keycloak, MCP y RBAC |
+| [Stadium Wallet GitOps — Sitio de Documentación](https://maximilianopizarro.github.io/nfl-wallet-gitops/) | Guías operativas: arquitectura, getting started, despliegue ACM, gateway policies, scripts QA |
 | [RHBK NeuroFace Biometric Flow](https://maximilianopizarro.github.io/rhbk-biometric-flow/) | RHBK 26.0 con 2FA biométrico facial vía NeuroFace SPI — Helm chart, videos demo y arquitectura |
 | [NeuroFace — Servicio de Reconocimiento Facial](https://github.com/maximilianoPizarro/neuroface) | Webapp de reconocimiento facial FastAPI + Angular 17 con OpenCV LBPH / dlib |
 
@@ -1458,6 +1459,77 @@ Para probar el chart **0.1.3** con login biométrico en un contexto de producci�
 
 [![ACM Apps Overview]({{ '/images/acm-apps.png' | relative_url }})]({{ '/images/acm-apps.png' | relative_url }}){: .doc-img-link}
 <span class="img-caption">ACM — Vista general de las aplicaciones desplegadas en los managed clusters.</span>
+
+## 9.7 Sitio de Documentación del Repositorio GitOps
+
+El [sitio de documentación de Stadium Wallet GitOps](https://maximilianopizarro.github.io/nfl-wallet-gitops/) proporciona guías detalladas paso a paso para cada aspecto del despliegue GitOps. Complementa este documento con runbooks operativos e instrucciones específicas por ambiente.
+
+### Guías Disponibles
+
+| Guía | Descripción |
+|------|-------------|
+| [Architecture](https://maximilianopizarro.github.io/nfl-wallet-gitops/architecture.html) | Placement, ApplicationSet matrix, topología multi-cluster (ACM e independiente) |
+| [Getting Started](https://maximilianopizarro.github.io/nfl-wallet-gitops/getting-started.html) | Prerequisitos, clonar, verificar Kustomize, desplegar east/west o ACM — guía de 10 pasos |
+| [ARGO-ACM-DEPLOY](https://maximilianopizarro.github.io/nfl-wallet-gitops/ARGO-ACM-DEPLOY.html) | Lógica ACM: ManagedClusterSetBinding, Placement, GitOpsCluster, orden de aplicaciones |
+| [Gateway Policies](https://maximilianopizarro.github.io/nfl-wallet-gitops/gateway-policies.html) | AuthPolicy (API key), RateLimitPolicy, política OIDC, login biométrico RHBK, ruta canary |
+| [Observability](https://maximilianopizarro.github.io/nfl-wallet-gitops/observability.html) | Grafana Operator, ServiceMonitors, scripts de tráfico `run-tests.sh` |
+| [QA Test Plan](https://maximilianopizarro.github.io/nfl-wallet-gitops/qa-test-plan.html) | Script automatizado `qa-test-plan.sh` — 10 pruebas end-to-end (sync GitOps, mesh, auth, rate limiting, cross-cluster) |
+| [QA Diagrams](https://maximilianopizarro.github.io/nfl-wallet-gitops/qa-diagrams.html) | Diagramas Mermaid visuales para cada caso de prueba QA con referencias a recursos YAML |
+| [ApplicationSet](https://maximilianopizarro.github.io/nfl-wallet-gitops/applicationset.html) | Referencia YAML del ApplicationSet y detalles del matrix generator |
+| [Troubleshooting](https://maximilianopizarro.github.io/nfl-wallet-gitops/troubleshooting.html) | Problemas comunes: RBAC de ApplicationSet, OutOfSync, errores 503, aprobación de CSR |
+
+### Modos de Despliegue
+
+El sitio documenta dos modos de despliegue, cada uno con su propia ruta de inicio:
+
+**Con ACM (Hub + Managed Clusters):**
+
+```bash
+# 1. Placements + GitOpsCluster (crea secrets east/west en ArgoCD)
+kubectl apply -f app-nfl-wallet-acm.yaml -n openshift-gitops
+
+# 2. ApplicationSet (genera 6 Applications: dev/test/prod × east/west)
+kubectl apply -f app-nfl-wallet-acm-cluster-decision.yaml -n openshift-gitops
+
+# 3. Patches de recursos Kuadrant (escalado Authorino, Limitador)
+kubectl apply -f app-kuadrant-resources.yaml -n openshift-gitops
+```
+
+**Sin ACM (East/West Independientes):**
+
+```bash
+kubectl apply -f app-nfl-wallet-east.yaml -n openshift-gitops
+kubectl apply -f app-nfl-wallet-west.yaml -n openshift-gitops
+```
+
+### Políticas de Gateway por Ambiente
+
+El sitio detalla cómo los overlays de Kustomize aplican diferentes políticas de seguridad por ambiente:
+
+| Ambiente | Contenido del Overlay | Chart |
+|----------|----------------------|-------|
+| **Dev** | Ruta de Gateway, namespace-mesh (`istio-injection`), login biométrico RHBK | 0.1.3 |
+| **Test** | Ruta de Gateway, AuthPolicy, API keys, ruta ESPN, PlanPolicy, login biométrico RHBK, política OIDC | 0.1.3 |
+| **Prod** | Ruta de Gateway, ruta canary, AuthPolicy, API keys, PlanPolicy (sin biométrico) | 0.1.1 |
+
+La política OIDC en test crea objetos `AuthPolicy` de Kuadrant por HTTPRoute de API que validan tokens JWT del realm RHBK, coexistiendo con la AuthPolicy de API key existente en el Gateway.
+
+### Script QA Automatizado
+
+El script `qa-test-plan.sh` ejecuta la suite completa de pruebas desde el cluster hub contra east y west:
+
+```bash
+export CLUSTER_DOMAIN_EAST="cluster-east.sandbox.opentlc.com"
+export CLUSTER_DOMAIN_WEST="cluster-west.sandbox.opentlc.com"
+export API_KEY_TEST="nfl-wallet-customers-key"
+export API_KEY_PROD="nfl-wallet-customers-key"
+
+./scripts/qa-test-plan.sh
+```
+
+El script valida sync GitOps, enrolamiento en ambient mesh, egress ESPN, rate limiting, enforcement de AuthPolicy, accesibilidad cross-cluster, salud del stack de observabilidad, Swagger UI, endpoints RHBK NeuroFace y escalado de recursos — produciendo un reporte PASS/FAIL para cada caso de prueba.
+
+> **Fuente:** [Stadium Wallet GitOps — Sitio de Documentación](https://maximilianopizarro.github.io/nfl-wallet-gitops/) — Guías operativas completas, diagramas de arquitectura y scripts QA automatizados.
 
 ---
 
