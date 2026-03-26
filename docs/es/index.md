@@ -1650,86 +1650,308 @@ Para cambiar el dominio, editar el patch en cada overlay correspondiente.
 
 # 13. Plan de Pruebas y Validación (QA) {#pruebas}
 
-Una vez finalizada la sincronización de ArgoCD, el equipo de QA u Operaciones debe ejecutar el siguiente plan de pruebas para certificar el despliegue.
+Una vez finalizada la sincronización de ArgoCD, el equipo de QA u Operaciones debe ejecutar el siguiente plan de pruebas para certificar el despliegue. Cada caso de prueba incluye un diagrama de flujo mostrando la lógica de validación y los recursos YAML involucrados.
 
-## 13.1 Matriz de Pruebas
+| Resumen | | |
+|---------|---|---|
+| **13 Casos de Prueba** | **3 Ambientes** (dev, test, prod) | **2 Clústeres** (East, West) |
 
-| ID | Componente | Descripción de la Prueba | Criterio de Éxito | Estado |
-|----|------------|--------------------------|-------------------|--------|
-| QA-01 | GitOps Sync | Verificar en la UI de ArgoCD que la aplicación `nfl-wallet` esté en estado **Healthy** y **Synced** | Todos los recursos en verde; pods en estado `Running` | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-02 | Ambient Mesh | Ejecutar `oc get pods -n nfl-wallet`. Confirmar que los pods tienen solo 1 contenedor (sin sidecar) | Pods muestran `1/1 READY` | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-03 | Egress (ESPN) | Acceder al pod del frontend o invocar `/api/bills/scoreboard` | JSON válido con los scores proveídos por ESPN | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-04 | RHDH Portal | Navegar a Developer Hub, buscar `nfl-wallet-api-customers` y visualizar la documentación OpenAPI | La especificación Swagger/OpenAPI renderiza correctamente | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-05 | Rate Limiting | Generar una API Key temporal (Tier Silver). Realizar un bucle de 505 peticiones HTTP GET a `/api/customers` con header `X-Api-Key` | La petición 501 debe devolver **HTTP 429 Too Many Requests** | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-06 | AuthPolicy | Enviar request sin `X-API-Key` al endpoint `/api-bills` (test/prod) | Respuesta **HTTP 403** con JSON `{"error":"Forbidden",...}` | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-07 | Cross-Cluster | Desde webapp (East), consultar balance de un cliente que agrega `api-bills` (East) y `api-raiders` (West) | UI muestra saldos de ambos equipos correctamente | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-08 | Observabilidad | Verificar en Grafana que las métricas `istio_requests_total` se reciben de ambos clústeres | Dashboard muestra datos de East y West | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-09 | Swagger UI | Navegar a `/api/swagger` de cada API (api-customers, api-bills, api-raiders) | Swashbuckle UI renderiza correctamente con endpoints documentados | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-10 | Load Test | Ejecutar `./generate-traffic-realistic.sh --workers 20 --interval 1` | RateLimitPolicies enforcen cuota de 100 req/min; tráfico excedente recibe 429 | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-11 | Login Biométrico (Dev) | Navegar a la webapp en `nfl-wallet-dev`. Clic en login y autenticarse con usuario/contraseña + reconocimiento facial | El login RHBK finaliza; el usuario es redirigido a la UI de wallet con sesión autenticada | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-12 | Enrolamiento Biométrico | Primer inicio con un usuario nuevo — completar enrolamiento facial (5 capturas en FHD 1920×1080) | El enrolamiento tiene éxito; los inicios posteriores usan verificación facial como 2FA | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-13 | Política OIDC (Test) | Autenticarse vía RHBK en `nfl-wallet-test`. Acceder a `/api/customers` con el token JWT OIDC | La petición tiene éxito con JWT válido; sin token devuelve **HTTP 401** | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-14 | Ruta Canary | Acceder a `nfl-wallet-canary.apps.<cluster-domain>` en prod | La versión canary responde correctamente; la ruta estable no se ve afectada | <span class="rh-tag rh-tag--green">Passed</span> |
-| QA-15 | Recursos Kuadrant | Verificar la latencia de Authorino tras aplicar los parches de recursos (`kuadrant-system/`) | El tiempo de respuesta ext-authz baja de ~20 s a <500ms | <span class="rh-tag rh-tag--green">Passed</span> |
+## QA-01 — GitOps Sync {#qa-01}
 
-## 13.2 Script de Prueba de Rate Limiting (QA-05)
+**ArgoCD Applications Healthy & Synced**
 
-```bash
-# Validar el límite Silver (500/día)
-for i in {1..505}; do
-  STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-    -H "X-Api-Key: $API_KEY" \
-    https://<api-customers-route>/api/customers)
-  echo "Petición $i: Código HTTP $STATUS_CODE"
-done
-# Las últimas 5 peticiones deben mostrar "Código HTTP 429"
+```mermaid
+flowchart TD
+  A["oc get applications.argoproj.io\n-n openshift-gitops"] --> B{"Apps\nfound?"}
+  B -- No --> F1["FAIL: Cannot list apps"]
+  B -- Yes --> C["Parse each app:\nname / sync / health"]
+  C --> D{"kuadrant-resources-*\nOutOfSync?"}
+  D -- Yes --> W["WARNING:\nSharedResourceWarning\napply gateway-resources.yaml"]
+  D -- No --> E{"Synced &\nHealthy?"}
+  E -- Yes --> P["App OK"]
+  E -- No --> F2["App unhealthy"]
+  W --> G{"All nfl-wallet\napps OK?"}
+  P --> G
+  F2 --> G
+  G -- Yes --> PASS["PASS"]
+  G -- No --> FAIL["FAIL"]
 ```
 
-## 13.3 Verificación de API y Tráfico
+**Recursos YAML:** `app-nfl-wallet-acm-cluster-decision.yaml` (ApplicationSet), `app-kuadrant-resources.yaml` (ApplicationSet), `app-observability-east-west.yaml` (ApplicationSet), `app-nfl-wallet-acm.yaml` (Placement), `kuadrant-system/gateway-resources.yaml` (Parche manual)
 
-```bash
-# Health check de las tres APIs
-scripts/test-apis.sh
+## QA-02 — Ambient Mesh {#qa-02}
 
-# Documentación interactiva
-# Navegar a: https://<api-customers-route>/api/swagger
+**Pods con 1 contenedor (sin sidecar)**
 
-# Simulación de carga (20 workers concurrentes)
-./generate-traffic-realistic.sh --workers 20 --interval 1
+```mermaid
+flowchart TD
+  A["oc get pods\n-n nfl-wallet-dev/test/prod"] --> B{"Pods\nfound?"}
+  B -- No --> S["SKIP: Run from\nmanaged cluster"]
+  B -- Yes --> C["Check each pod:\ncount containers"]
+  C --> D{"Has\nistio-proxy?"}
+  D -- Yes --> F["FAIL: Sidecar detected"]
+  D -- No --> E{"Only 1\ncontainer?"}
+  E -- Yes --> P["No sidecar — Ambient"]
+  E -- No --> W["WARNING: Multiple containers"]
+  P --> R{"All pods OK?"}
+  W --> R
+  F --> R
+  R -- Yes --> PASS["PASS"]
+  R -- No --> FAIL["FAIL"]
 ```
 
-## 13.4 Verificación UI (Cross-Cluster)
+**Recursos YAML:** `overlays/dev/namespace-mesh.yaml`, `overlays/test/namespace-mesh.yaml`, `overlays/prod/namespace-mesh.yaml` (Labels de Namespace)
 
-1. **Customer List:** Verificar que el frontend recibe la lista de clientes desde `api-customers`
-2. **Cross-Cluster Balance:** Seleccionar un perfil y verificar que la UI agrega saldos de `api-bills` (East) y `api-raiders` (West) — confirma la federación cross-cluster
+## QA-03 — Egress ESPN {#qa-03}
 
-## 13.5 Flujo de Login Biométrico (QA-11 / QA-12)
+**Ruta ESPN accesible (solo ambiente test)**
 
-1. Navegar a la ruta de la webapp en `nfl-wallet-dev` o `nfl-wallet-test`
-2. Clic en el botón **Login** — redirección a la página de login de RHBK
-3. Introducir usuario/contraseña (una de las 7 cuentas precargadas)
-4. **Primer inicio:** completar el enrolamiento biométrico — la cámara captura imágenes faciales (configurable: 5 capturas por defecto a la resolución definida en los valores Helm)
-5. **Inicios posteriores:** verificación facial como segundo factor
-6. Tras la autenticación correcta, el usuario es redirigido a la UI de wallet con una sesión activa de Keycloak
-
-## 13.6 Validación OIDC JWT (QA-13)
-
-En `nfl-wallet-test`, la política OIDC crea objetos `AuthPolicy` de Kuadrant por HTTPRoute. Para probar:
-
-```bash
-# Obtener un token JWT desde RHBK
-TOKEN=$(curl -s -X POST \
-  "https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.<cluster>/realms/neuroface/protocol/openid-connect/token" \
-  -d "grant_type=password&client_id=nfl-wallet&username=<user>&password=<pass>" \
-  | jq -r '.access_token')
-
-# Acceder a la API con token OIDC
-curl -H "Authorization: Bearer $TOKEN" \
-  https://<api-customers-route>/api/customers
-
-# Sin token — se espera 401
-curl -v https://<api-customers-route>/api/customers
+```mermaid
+flowchart TD
+  A["curl ESPN route\n/auth/nfl + X-Api-Key"] --> B{"HTTP\ncode?"}
+  B -- 200 --> P1["PASS: ESPN OK"]
+  B -- 301/302 --> P2["PASS: Redirect active"]
+  B -- 401/403 --> C["Route exists\nbut auth failed"]
+  C --> D["Try /public/nfl\nno auth required"]
+  D --> E{"HTTP\n200?"}
+  E -- Yes --> P3["PASS: Public path"]
+  E -- No --> P4["PASS: Route exists"]
+  B -- other --> F["Fallback:\ntest api-bills on dev"]
+  F --> G{"HTTP\n200?"}
+  G -- Yes --> P5["PASS: api-bills OK"]
+  G -- No --> FAIL["FAIL"]
 ```
+
+**Recursos YAML:** `overlays/test/nfl-wallet-espn-route.yaml` (HTTPRoute), `overlays/test/auth-policy-patch.yaml` (AuthPolicy), `overlays/test/api-keys-secret.yaml` (Secret)
+
+## QA-04 — Portal RHDH {#qa-04}
+
+**El catálogo de Developer Hub muestra las APIs**
+
+```mermaid
+flowchart TD
+  A["Manual Verification"] --> B["1. Navigate to\nRed Hat Developer Hub"]
+  B --> C["2. Search for\nnfl-wallet-api-customers"]
+  C --> D["3. Verify OpenAPI\nspec renders correctly"]
+  D --> E["4. Check Kuadrant Plugin:\nPlanPolicy & AuthPolicy"]
+  E --> SKIP["SKIP: Manual"]
+```
+
+**Recursos YAML:** `developer-hub/catalog-info.yaml` (Catálogo Backstage)
+
+## QA-05 — Rate Limiting {#qa-05}
+
+**429 tras exceder la cuota (110 peticiones)**
+
+```mermaid
+flowchart TD
+  A["Send 110 sequential\ncurl requests with X-Api-Key"] --> B["Count responses:\n200 / 429 / errors"]
+  B --> C{"Got any\n429?"}
+  C -- Yes --> P1["PASS: Rate limit active\nat request #N"]
+  C -- No --> D{"Any\n200s?"}
+  D -- Yes --> E{"Any\nerrors?"}
+  E -- Yes --> P2["PASS: Reachable,\nno 429 seen"]
+  E -- No --> P3["PASS: All 200,\nno RateLimitPolicy"]
+  D -- No --> FAIL["FAIL: Unreachable"]
+```
+
+**Recursos YAML:** `overlays/test/plan-policy.yaml` (RateLimitPolicy), `overlays/test/api-keys-secret.yaml` (Secret), `kuadrant-system/resource-requirements.yaml` (Limitador)
+
+## QA-06 — AuthPolicy {#qa-06}
+
+**401/403 sin clave, 200 con clave, JWT OIDC**
+
+```mermaid
+flowchart TD
+  A["curl WITHOUT\nX-Api-Key"] --> B{"HTTP\n401/403?"}
+  B -- Yes --> C["Auth enforced"]
+  B -- No --> F1["Not enforced"]
+  C --> D["curl WITH X-Api-Key\nup to 5 retries"]
+  D --> E{"HTTP\n200?"}
+  E -- Yes --> G["API key works"]
+  E -- No --> F2["Key rejected"]
+  G --> H["OIDC: curl\n.well-known endpoint"]
+  H --> I{"HTTP\n200?"}
+  I -- Yes --> J["POST token_endpoint\ngrant_type=password\nuser=john.doe"]
+  I -- No --> W1["WARNING: RHBK not ready"]
+  J --> K{"Got\naccess_token?"}
+  K -- Yes --> L["curl with\nBearer token"]
+  K -- No --> W2["WARNING: Password reset needed"]
+  L --> M{"HTTP\n200?"}
+  M -- Yes --> P["JWT accepted"]
+  M -- No --> W3["WARNING: Token OK, API non-200"]
+```
+
+**Recursos YAML:** `overlays/test/auth-policy-patch.yaml` (AuthPolicy), `overlays/test/api-keys-secret.yaml` (Secret), `overlays/test/oidc-policy-customers.yaml` (OIDC), `overlays/test/oidc-policy-bills.yaml` (OIDC), `overlays/test/oidc-policy-raiders.yaml` (OIDC), `overlays/prod/auth-policy-patch.yaml` (AuthPolicy), `overlays/prod/api-keys-secret.yaml` (Secret)
+
+## QA-07 — Cross-Cluster {#qa-07}
+
+**East y West sirven workloads independientes**
+
+```mermaid
+flowchart TD
+  A["curl dev APIs\non EAST cluster"] --> B["api-customers\napi-bills\napi-raiders"]
+  C["curl dev APIs\non WEST cluster"] --> D["api-customers\napi-bills\napi-raiders"]
+  B --> E{"All\n200?"}
+  D --> F{"All\n200?"}
+  E -- Yes --> G["East OK"]
+  E -- No --> H["WARNING: East timeout"]
+  F -- Yes --> I["West OK"]
+  F -- No --> J["WARNING: West timeout"]
+  G --> K["Test webapp /\non both clusters"]
+  H --> K
+  I --> K
+  J --> K
+  K --> L{"Both clusters\nrespond?"}
+  L -- Both --> P1["PASS: Both OK"]
+  L -- One --> P2["PASS: One OK\nother = sandbox latency"]
+  L -- Neither --> FAIL["FAIL"]
+```
+
+**Recursos YAML:** `overlays/dev-east/kustomization.yaml`, `overlays/dev-west/kustomization.yaml` (Kustomize), `base/gateway-route.yaml` (Route), `app-nfl-wallet-acm.yaml` (ACM Placement)
+
+## QA-08 — Observabilidad {#qa-08}
+
+**Métricas Prometheus y Grafana accesibles**
+
+```mermaid
+flowchart TD
+  A["curl Grafana route\non Hub cluster"] --> B{"HTTP\n200/302?"}
+  B -- Yes --> C["Grafana OK"]
+  B -- No --> F1["Grafana down"]
+  D["curl Promxy route\non Hub cluster"] --> E{"HTTP\n200/302?"}
+  E -- Yes --> G["Promxy OK"]
+  E -- No --> F2["Promxy down"]
+  C --> H{"oc CLI\navailable?"}
+  G --> H
+  H -- Yes --> I["Query Prometheus:\nistio_requests_total"]
+  H -- No --> J["PASS if Grafana OK"]
+  I --> K{"result in\nresponse?"}
+  K -- Yes --> PASS["PASS: Metrics OK"]
+  K -- No --> L{"Grafana\nOK?"}
+  L -- Yes --> P2["PASS: Grafana reachable"]
+  L -- No --> FAIL["FAIL"]
+```
+
+**Recursos YAML:** `app-observability-east-west.yaml` (ApplicationSet), `grafana-operator/grafana-instance.yaml` (Grafana), `grafana-operator/grafana-route.yaml` (Route), `grafana-operator/grafana-datasource.yaml` (Datasource), `nfl-wallet-observability/prometheus-route.yaml` (Route)
+
+## QA-09 — Swagger UI {#qa-09}
+
+**Cada API sirve /api-service/swagger**
+
+```mermaid
+flowchart TD
+  A["For each API:\ncustomers / bills / raiders"] --> B["curl\n/api-SERVICE/swagger"]
+  B --> C{"HTTP\n200 or 301?"}
+  C -- Yes --> P["Swagger OK"]
+  C -- No --> D["Try alt path:\n/SERVICE/swagger"]
+  D --> E{"HTTP\n200 or 301?"}
+  E -- Yes --> P2["Alt path OK"]
+  E -- No --> F["Not accessible"]
+  P --> R{"All APIs\naccessible?"}
+  P2 --> R
+  F --> R
+  R -- Yes --> PASS["PASS"]
+  R -- No --> FAIL["FAIL"]
+```
+
+**Recursos YAML:** `base/gateway-route.yaml` (Route), `app-nfl-wallet-acm-cluster-decision.yaml` (Helm chart)
+
+## QA-10 — Load Test {#qa-10}
+
+**10 workers × 20 peticiones concurrentes**
+
+```mermaid
+flowchart TD
+  A["Spawn 10 parallel\nworkers"] --> B["Each worker sends\n20 curl + X-Api-Key"]
+  B --> C["Collect results:\n200 / 429 / errors"]
+  C --> D{"Any\n429?"}
+  D -- Yes --> P1["PASS: RateLimit enforced"]
+  D -- No --> E{"All\n200?"}
+  E -- Yes --> P2["PASS: No rate limit hit"]
+  E -- No --> F{"Success\nrate >= 30%?"}
+  F -- Yes --> P3["PASS: Intermittent errors"]
+  F -- No --> FAIL["FAIL: Too many errors"]
+```
+
+**Recursos YAML:** `overlays/test/plan-policy.yaml` (RateLimitPolicy), `kuadrant-system/resource-requirements.yaml` (Authorino + Limitador), `kuadrant-system/gateway-resources.yaml` (Gateway Proxy)
+
+## QA-11 — RHBK NeuroFace {#qa-11}
+
+**Endpoints de login biométrico (dev/test)**
+
+```mermaid
+flowchart TD
+  A["For each env:\ndev / test"] --> B["For each cluster:\neast / west"]
+  B --> C["curl RHBK\n/realms/neuroface"]
+  C --> D{"HTTP\n200?"}
+  D -- Yes --> E["RHBK healthy"]
+  D -- No --> F["RHBK down"]
+  E --> G["curl .well-known\n/openid-configuration"]
+  G --> H{"HTTP\n200?"}
+  H -- Yes --> I["OIDC OK"]
+  H -- No --> J["OIDC down"]
+  I --> K{"All realm +\nOIDC OK?"}
+  F --> K
+  J --> K
+  K -- Yes --> PASS["PASS"]
+  K -- No --> FAIL["FAIL"]
+```
+
+**Recursos YAML:** `app-nfl-wallet-acm-cluster-decision.yaml` (valores Helm RHBK), `overlays/test/oidc-policy-customers.yaml` (OIDC), `overlays/test/oidc-policy-bills.yaml` (OIDC), `overlays/test/oidc-policy-raiders.yaml` (OIDC)
+
+## QA-12 — Canary Deployment {#qa-12}
+
+**Prod = v0.1.1, Canary = v0.1.3 vía hostname separado**
+
+```mermaid
+flowchart TD
+  A["For each cluster:\neast / west"] --> B["curl prod URL\nnfl-wallet-prod.*"]
+  A --> C["curl canary URL\nnfl-wallet-canary.*"]
+  B --> D{"HTTP\n200?"}
+  D -- Yes --> E["Check body:\nno login/keycloak"]
+  D -- 000 --> F["WARNING: Timeout\nsandbox latency"]
+  E --> G{"No login\nfound?"}
+  G -- Yes --> H["Prod = v0.1.1"]
+  G -- No --> I["Wrong version"]
+  C --> J{"HTTP\n200?"}
+  J -- Yes --> K["Canary reachable"]
+  J -- 000 --> L["WARNING: No Route\nor timeout"]
+  H --> M{"Prod verified\nAND canary\nreachable?"}
+  K --> M
+  M -- Both --> PASS["PASS"]
+  M -- One --> P2["PASS: partial"]
+  M -- Error --> FAIL["FAIL"]
+```
+
+**Recursos YAML:** `overlays/prod/canary-httproute.yaml` (HTTPRoute), `overlays/prod-east/canary-httproute.yaml` (HTTPRoute), `overlays/prod-west/canary-httproute.yaml` (HTTPRoute), `base-canary/canary-route.yaml` (Route), `base/gateway-route.yaml` (Route Prod)
+
+## QA-13 — Resource Scaling {#qa-13}
+
+**RHBK, NeuroFace y Gateway con recursos escalados**
+
+```mermaid
+flowchart TD
+  A["For each ns:\nnfl-wallet-dev / test"] --> B["oc get deploy\nnfl-wallet-rhbk-neuroface"]
+  B --> C{"CPU = 1\nor 1000m?"}
+  C -- Yes --> D["RHBK scaled"]
+  C -- 500m --> E["WARNING: Chart default\nre-apply ApplicationSet"]
+  A --> F["oc get deploy\nneuroface-backend"]
+  F --> G{"CPU = 1\nor 1000m?"}
+  G -- Yes --> H["NeuroFace scaled"]
+  G -- 100m --> I["WARNING: Chart default\nre-apply ApplicationSet"]
+  A --> J["oc get deploy\nnfl-wallet-gateway-istio"]
+  J --> K{"CPU = 1\nor 1000m?"}
+  K -- Yes --> L["Gateway scaled"]
+  K -- N/A --> M["WARNING: Apply\ngateway-resources.yaml"]
+  D --> R{"All\nscaled?"}
+  H --> R
+  L --> R
+  R -- Yes --> PASS["PASS"]
+  R -- No --> FAIL["FAIL"]
+```
+
+**Recursos YAML:** `app-nfl-wallet-acm-cluster-decision.yaml` (rhbk.resources), `kuadrant-system/resource-requirements.yaml` (Authorino + Limitador), `kuadrant-system/gateway-resources.yaml` (Gateway Proxy)
 
 ---
 
