@@ -1677,7 +1677,160 @@ flowchart TD
   G -- No --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `app-nfl-wallet-acm-cluster-decision.yaml` (ApplicationSet), `app-kuadrant-resources.yaml` (ApplicationSet), `app-observability-east-west.yaml` (ApplicationSet), `app-nfl-wallet-acm.yaml` (Placement), `kuadrant-system/gateway-resources.yaml` (Manual Patch)
+<div class="yaml-resources">
+<details>
+<summary>app-nfl-wallet-acm-cluster-decision.yaml <span class="yaml-badge yaml-badge--appset">ApplicationSet</span></summary>
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nfl-wallet
+  namespace: openshift-gitops
+spec:
+  generators:
+  - matrix:
+      generators:
+      - clusterDecisionResource:
+          configMapRef: acm-placement
+          labelSelector:
+            matchLabels:
+              cluster.open-cluster-management.io/placement: nfl-wallet-gitops-placement
+          requeueAfterSeconds: 180
+      - list:
+          elements:
+          - env: dev
+            chartVersion: "0.1.3"
+          - env: test
+            chartVersion: "0.1.3"
+          - env: prod
+            chartVersion: "0.1.1"
+  template:
+    metadata:
+      name: 'nfl-wallet-{{env}}-{{name}}'
+    spec:
+      project: default
+      sources:
+      - repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
+        targetRevision: HEAD
+        path: 'nfl-wallet/overlays/{{env}}-{{name}}'
+      - repoURL: 'https://maximilianopizarro.github.io/NFL-Wallet'
+        chart: nfl-wallet
+        targetRevision: '{{chartVersion}}'
+      destination:
+        server: '{{server}}'
+        namespace: 'nfl-wallet-{{env}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+```
+
+</details>
+
+
+<details>
+<summary>app-kuadrant-resources.yaml <span class="yaml-badge yaml-badge--appset">ApplicationSet</span></summary>
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kuadrant-resources
+  namespace: openshift-gitops
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: east
+        server: 'https://api.cluster-east:6443'
+      - cluster: west
+        server: 'https://api.cluster-west:6443'
+  template:
+    metadata:
+      name: 'kuadrant-resources-{{cluster}}'
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
+        targetRevision: HEAD
+        path: kuadrant-system
+      destination:
+        server: '{{server}}'
+        namespace: kuadrant-system
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+        - ServerSideApply=true
+```
+
+</details>
+
+
+<details>
+<summary>app-nfl-wallet-acm.yaml <span class="yaml-badge yaml-badge--patch">Placement</span></summary>
+
+```yaml
+apiVersion: cluster.open-cluster-management.io/v1beta1
+kind: Placement
+metadata:
+  name: nfl-wallet-gitops-placement
+  namespace: openshift-gitops
+spec:
+  predicates:
+  - requiredClusterSelector:
+      labelSelector:
+        matchLabels:
+          nfl-wallet: "true"
+---
+apiVersion: apps.open-cluster-management.io/v1beta1
+kind: GitOpsCluster
+metadata:
+  name: nfl-wallet-gitops
+  namespace: openshift-gitops
+spec:
+  argoServer:
+    cluster: local-cluster
+    argoNamespace: openshift-gitops
+  placementRef:
+    kind: Placement
+    name: nfl-wallet-gitops-placement
+```
+
+</details>
+
+
+<details>
+<summary>kuadrant-system/gateway-resources.yaml <span class="yaml-badge yaml-badge--patch">Manual Patch</span></summary>
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfl-wallet-gateway-istio
+  namespace: nfl-wallet-prod
+spec:
+  template:
+    spec:
+      containers:
+      - name: istio-proxy
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            cpu: "2"
+            memory: 1Gi
+```
+
+</details>
+
+
+</div>
 
 ## QA-02 — Ambient Mesh {#qa-02}
 
@@ -1700,7 +1853,53 @@ flowchart TD
   R -- No --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `overlays/dev/namespace-mesh.yaml`, `overlays/test/namespace-mesh.yaml`, `overlays/prod/namespace-mesh.yaml` (Namespace labels)
+<div class="yaml-resources">
+<details>
+<summary>overlays/dev/namespace-mesh.yaml <span class="yaml-badge yaml-badge--ns">Namespace</span></summary>
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfl-wallet-dev
+  labels:
+    istio-injection: enabled
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/namespace-mesh.yaml <span class="yaml-badge yaml-badge--ns">Namespace</span></summary>
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfl-wallet-test
+  labels:
+    istio.io/dataplane-mode: ambient
+```
+
+</details>
+
+
+<details>
+<summary>overlays/prod/namespace-mesh.yaml <span class="yaml-badge yaml-badge--ns">Namespace</span></summary>
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nfl-wallet-prod
+  labels:
+    istio.io/dataplane-mode: ambient
+```
+
+</details>
+
+
+</div>
 
 ## QA-03 — Egress ESPN {#qa-03}
 
@@ -1722,7 +1921,91 @@ flowchart TD
   G -- No --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `overlays/test/nfl-wallet-espn-route.yaml` (HTTPRoute), `overlays/test/auth-policy-patch.yaml` (AuthPolicy), `overlays/test/api-keys-secret.yaml` (Secret)
+<div class="yaml-resources">
+<details>
+<summary>overlays/test/nfl-wallet-espn-route.yaml <span class="yaml-badge yaml-badge--route">HTTPRoute</span></summary>
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nfl-wallet-espn
+  namespace: nfl-wallet-test
+spec:
+  parentRefs:
+  - name: nfl-wallet-gateway
+  hostnames:
+  - "nfl-wallet-test.apps.cluster-east.example.com"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /public/nfl
+    backendRefs:
+    - name: api-bills
+      port: 8081
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/auth-policy-patch.yaml <span class="yaml-badge yaml-badge--policy">AuthPolicy</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: nfl-wallet-gateway-auth
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: nfl-wallet-gateway
+  rules:
+    authentication:
+      api-key-authn:
+        apiKey:
+          selector:
+            matchLabels:
+              api: nfl-wallet-test
+        credentials:
+          customHeader:
+            name: X-Api-Key
+    response:
+      unauthorized:
+        headers:
+          content-type:
+            value: application/json
+        body:
+          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/api-keys-secret.yaml <span class="yaml-badge yaml-badge--secret">Secret</span></summary>
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nfl-wallet-customers-key
+  namespace: nfl-wallet-test
+  labels:
+    api: nfl-wallet-test
+    authorino.kuadrant.io/managed-by: authorino
+stringData:
+  api_key: changeme-test-key
+type: Opaque
+```
+
+</details>
+
+
+</div>
 
 ## QA-04 — RHDH Portal {#qa-04}
 
@@ -1737,7 +2020,31 @@ flowchart TD
   E --> SKIP["SKIP: Manual"]
 ```
 
-**YAML Resources:** `developer-hub/catalog-info.yaml` (Backstage Catalog)
+<div class="yaml-resources">
+<details>
+<summary>developer-hub/catalog-info.yaml <span class="yaml-badge yaml-badge--catalog">Backstage Catalog</span></summary>
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: nfl-wallet-api-customers
+  description: Stadium Wallet - Customers API
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    kuadrant.io/api-name: nfl-wallet-api-customers
+spec:
+  type: service
+  lifecycle: production
+  owner: maximiliano-pizarro
+  providesApis:
+  - nfl-wallet-customers-api
+```
+
+</details>
+
+
+</div>
 
 ## QA-05 — Rate Limiting {#qa-05}
 
@@ -1755,7 +2062,98 @@ flowchart TD
   D -- No --> FAIL["FAIL: Unreachable"]
 ```
 
-**YAML Resources:** `overlays/test/plan-policy.yaml` (RateLimitPolicy), `overlays/test/api-keys-secret.yaml` (Secret), `kuadrant-system/resource-requirements.yaml` (Limitador)
+<div class="yaml-resources">
+<details>
+<summary>overlays/test/plan-policy.yaml <span class="yaml-badge yaml-badge--policy">RateLimitPolicy</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1beta2
+kind: RateLimitPolicy
+metadata:
+  name: nfl-wallet-rate-limit
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: nfl-wallet-api-customers
+  limits:
+    silver:
+      rates:
+      - limit: 500
+        window: 1d
+      when:
+      - selector: auth.identity.metadata.labels.tier
+        operator: eq
+        value: silver
+    bronze:
+      rates:
+      - limit: 100
+        window: 1d
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/api-keys-secret.yaml <span class="yaml-badge yaml-badge--secret">Secret</span></summary>
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nfl-wallet-customers-key
+  namespace: nfl-wallet-test
+  labels:
+    api: nfl-wallet-test
+    authorino.kuadrant.io/managed-by: authorino
+stringData:
+  api_key: changeme-test-key
+type: Opaque
+```
+
+</details>
+
+
+<details>
+<summary>kuadrant-system/resource-requirements.yaml <span class="yaml-badge yaml-badge--patch">Authorino + Limitador</span></summary>
+
+```yaml
+apiVersion: operator.authorino.kuadrant.io/v1beta2
+kind: Authorino
+metadata:
+  name: authorino
+  namespace: kuadrant-system
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: "2"
+      memory: 1Gi
+---
+apiVersion: limitador.kuadrant.io/v1alpha1
+kind: Limitador
+metadata:
+  name: limitador
+  namespace: kuadrant-system
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 256Mi
+```
+
+</details>
+
+
+</div>
 
 ## QA-06 — AuthPolicy {#qa-06}
 
@@ -1782,7 +2180,192 @@ flowchart TD
   M -- No --> W3["WARNING: Token OK, API non-200"]
 ```
 
-**YAML Resources:** `overlays/test/auth-policy-patch.yaml` (AuthPolicy), `overlays/test/api-keys-secret.yaml` (Secret), `overlays/test/oidc-policy-customers.yaml` (OIDC), `overlays/test/oidc-policy-bills.yaml` (OIDC), `overlays/test/oidc-policy-raiders.yaml` (OIDC), `overlays/prod/auth-policy-patch.yaml` (AuthPolicy), `overlays/prod/api-keys-secret.yaml` (Secret)
+<div class="yaml-resources">
+<details>
+<summary>overlays/test/auth-policy-patch.yaml <span class="yaml-badge yaml-badge--policy">AuthPolicy</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: nfl-wallet-gateway-auth
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: nfl-wallet-gateway
+  rules:
+    authentication:
+      api-key-authn:
+        apiKey:
+          selector:
+            matchLabels:
+              api: nfl-wallet-test
+        credentials:
+          customHeader:
+            name: X-Api-Key
+    response:
+      unauthorized:
+        headers:
+          content-type:
+            value: application/json
+        body:
+          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/api-keys-secret.yaml <span class="yaml-badge yaml-badge--secret">Secret</span></summary>
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nfl-wallet-customers-key
+  namespace: nfl-wallet-test
+  labels:
+    api: nfl-wallet-test
+    authorino.kuadrant.io/managed-by: authorino
+stringData:
+  api_key: changeme-test-key
+type: Opaque
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/oidc-policy-customers.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: oidc-api-customers
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: nfl-wallet-api-customers
+  rules:
+    authentication:
+      oidc-rhbk:
+        jwt:
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/oidc-policy-bills.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: oidc-api-bills
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: nfl-wallet-api-bills
+  rules:
+    authentication:
+      oidc-rhbk:
+        jwt:
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/oidc-policy-raiders.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: oidc-api-raiders
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: nfl-wallet-api-raiders
+  rules:
+    authentication:
+      oidc-rhbk:
+        jwt:
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
+```
+
+</details>
+
+
+<details>
+<summary>overlays/prod/auth-policy-patch.yaml <span class="yaml-badge yaml-badge--policy">AuthPolicy</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: nfl-wallet-gateway-auth
+  namespace: nfl-wallet-prod
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: nfl-wallet-gateway
+  rules:
+    authentication:
+      api-key-authn:
+        apiKey:
+          selector:
+            matchLabels:
+              api: nfl-wallet-prod
+        credentials:
+          customHeader:
+            name: X-Api-Key
+    response:
+      unauthorized:
+        headers:
+          content-type:
+            value: application/json
+        body:
+          value: '{"error":"Forbidden","message":"Invalid or missing API Key"}'
+```
+
+</details>
+
+
+<details>
+<summary>overlays/prod/api-keys-secret.yaml <span class="yaml-badge yaml-badge--secret">Secret</span></summary>
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nfl-wallet-customers-key
+  namespace: nfl-wallet-prod
+  labels:
+    api: nfl-wallet-prod
+    authorino.kuadrant.io/managed-by: authorino
+stringData:
+  api_key: changeme-prod-key
+type: Opaque
+```
+
+</details>
+
+
+</div>
 
 ## QA-07 — Cross-Cluster {#qa-07}
 
@@ -1808,7 +2391,60 @@ flowchart TD
   L -- Neither --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `overlays/dev-east/kustomization.yaml`, `overlays/dev-west/kustomization.yaml` (Kustomize), `base/gateway-route.yaml` (Route), `app-nfl-wallet-acm.yaml` (ACM Placement)
+<div class="yaml-resources">
+<details>
+<summary>overlays/dev-east/kustomization.yaml <span class="yaml-badge yaml-badge--ns">Kustomization</span></summary>
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: nfl-wallet-dev
+resources:
+- ../dev
+patches:
+- path: route-patch.yaml
+```
+
+</details>
+
+
+<details>
+<summary>overlays/dev-west/kustomization.yaml <span class="yaml-badge yaml-badge--ns">Kustomization</span></summary>
+
+```yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: nfl-wallet-dev
+resources:
+- ../dev
+patches:
+- path: route-patch.yaml
+```
+
+</details>
+
+
+<details>
+<summary>base/gateway-route.yaml <span class="yaml-badge yaml-badge--route">Route</span></summary>
+
+```yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nfl-wallet
+spec:
+  to:
+    kind: Service
+    name: nfl-wallet-gateway-istio
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+```
+
+</details>
+
+
+</div>
 
 ## QA-08 — Observability {#qa-08}
 
@@ -1833,7 +2469,67 @@ flowchart TD
   L -- No --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `app-observability-east-west.yaml` (ApplicationSet), `grafana-operator/grafana-instance.yaml` (Grafana), `grafana-operator/grafana-route.yaml` (Route), `grafana-operator/grafana-datasource.yaml` (Datasource), `nfl-wallet-observability/prometheus-route.yaml` (Route)
+<div class="yaml-resources">
+<details>
+<summary>app-observability-east-west.yaml <span class="yaml-badge yaml-badge--appset">ApplicationSet</span></summary>
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: observability-east-west
+  namespace: openshift-gitops
+spec:
+  generators:
+  - list:
+      elements:
+      - cluster: east
+        server: 'https://api.cluster-east:6443'
+      - cluster: west
+        server: 'https://api.cluster-west:6443'
+  template:
+    metadata:
+      name: 'observability-{{cluster}}'
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
+        targetRevision: HEAD
+        path: nfl-wallet-observability
+      destination:
+        server: '{{server}}'
+        namespace: nfl-wallet-observability
+      syncPolicy:
+        automated:
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+```
+
+</details>
+
+
+<details>
+<summary>nfl-wallet-observability/prometheus-route.yaml <span class="yaml-badge yaml-badge--route">Route</span></summary>
+
+```yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: promxy
+  namespace: nfl-wallet-observability
+spec:
+  to:
+    kind: Service
+    name: promxy
+  tls:
+    termination: edge
+```
+
+</details>
+
+
+</div>
 
 ## QA-09 — Swagger UI {#qa-09}
 
@@ -1855,7 +2551,82 @@ flowchart TD
   R -- No --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `base/gateway-route.yaml` (Route), `app-nfl-wallet-acm-cluster-decision.yaml` (Helm chart)
+<div class="yaml-resources">
+<details>
+<summary>base/gateway-route.yaml <span class="yaml-badge yaml-badge--route">Route</span></summary>
+
+```yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nfl-wallet
+spec:
+  to:
+    kind: Service
+    name: nfl-wallet-gateway-istio
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+```
+
+</details>
+
+
+<details>
+<summary>app-nfl-wallet-acm-cluster-decision.yaml <span class="yaml-badge yaml-badge--helm">Helm chart</span></summary>
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nfl-wallet
+  namespace: openshift-gitops
+spec:
+  generators:
+  - matrix:
+      generators:
+      - clusterDecisionResource:
+          configMapRef: acm-placement
+          labelSelector:
+            matchLabels:
+              cluster.open-cluster-management.io/placement: nfl-wallet-gitops-placement
+          requeueAfterSeconds: 180
+      - list:
+          elements:
+          - env: dev
+            chartVersion: "0.1.3"
+          - env: test
+            chartVersion: "0.1.3"
+          - env: prod
+            chartVersion: "0.1.1"
+  template:
+    metadata:
+      name: 'nfl-wallet-{{env}}-{{name}}'
+    spec:
+      project: default
+      sources:
+      - repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
+        targetRevision: HEAD
+        path: 'nfl-wallet/overlays/{{env}}-{{name}}'
+      - repoURL: 'https://maximilianopizarro.github.io/NFL-Wallet'
+        chart: nfl-wallet
+        targetRevision: '{{chartVersion}}'
+      destination:
+        server: '{{server}}'
+        namespace: 'nfl-wallet-{{env}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+```
+
+</details>
+
+
+</div>
 
 ## QA-10 — Load Test {#qa-10}
 
@@ -1874,7 +2645,104 @@ flowchart TD
   F -- No --> FAIL["FAIL: Too many errors"]
 ```
 
-**YAML Resources:** `overlays/test/plan-policy.yaml` (RateLimitPolicy), `kuadrant-system/resource-requirements.yaml` (Authorino + Limitador), `kuadrant-system/gateway-resources.yaml` (Gateway Proxy)
+<div class="yaml-resources">
+<details>
+<summary>overlays/test/plan-policy.yaml <span class="yaml-badge yaml-badge--policy">RateLimitPolicy</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1beta2
+kind: RateLimitPolicy
+metadata:
+  name: nfl-wallet-rate-limit
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: nfl-wallet-api-customers
+  limits:
+    silver:
+      rates:
+      - limit: 500
+        window: 1d
+      when:
+      - selector: auth.identity.metadata.labels.tier
+        operator: eq
+        value: silver
+    bronze:
+      rates:
+      - limit: 100
+        window: 1d
+```
+
+</details>
+
+
+<details>
+<summary>kuadrant-system/resource-requirements.yaml <span class="yaml-badge yaml-badge--patch">Authorino + Limitador</span></summary>
+
+```yaml
+apiVersion: operator.authorino.kuadrant.io/v1beta2
+kind: Authorino
+metadata:
+  name: authorino
+  namespace: kuadrant-system
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: "2"
+      memory: 1Gi
+---
+apiVersion: limitador.kuadrant.io/v1alpha1
+kind: Limitador
+metadata:
+  name: limitador
+  namespace: kuadrant-system
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 256Mi
+```
+
+</details>
+
+
+<details>
+<summary>kuadrant-system/gateway-resources.yaml <span class="yaml-badge yaml-badge--patch">Gateway Proxy</span></summary>
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfl-wallet-gateway-istio
+  namespace: nfl-wallet-prod
+spec:
+  template:
+    spec:
+      containers:
+      - name: istio-proxy
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            cpu: "2"
+            memory: 1Gi
+```
+
+</details>
+
+
+</div>
 
 ## QA-11 — RHBK NeuroFace {#qa-11}
 
@@ -1898,7 +2766,134 @@ flowchart TD
   K -- No --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `app-nfl-wallet-acm-cluster-decision.yaml` (RHBK Helm values), `overlays/test/oidc-policy-customers.yaml` (OIDC), `overlays/test/oidc-policy-bills.yaml` (OIDC), `overlays/test/oidc-policy-raiders.yaml` (OIDC)
+<div class="yaml-resources">
+<details>
+<summary>app-nfl-wallet-acm-cluster-decision.yaml <span class="yaml-badge yaml-badge--helm">RHBK Helm values</span></summary>
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nfl-wallet
+  namespace: openshift-gitops
+spec:
+  generators:
+  - matrix:
+      generators:
+      - clusterDecisionResource:
+          configMapRef: acm-placement
+          labelSelector:
+            matchLabels:
+              cluster.open-cluster-management.io/placement: nfl-wallet-gitops-placement
+          requeueAfterSeconds: 180
+      - list:
+          elements:
+          - env: dev
+            chartVersion: "0.1.3"
+          - env: test
+            chartVersion: "0.1.3"
+          - env: prod
+            chartVersion: "0.1.1"
+  template:
+    metadata:
+      name: 'nfl-wallet-{{env}}-{{name}}'
+    spec:
+      project: default
+      sources:
+      - repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
+        targetRevision: HEAD
+        path: 'nfl-wallet/overlays/{{env}}-{{name}}'
+      - repoURL: 'https://maximilianopizarro.github.io/NFL-Wallet'
+        chart: nfl-wallet
+        targetRevision: '{{chartVersion}}'
+      destination:
+        server: '{{server}}'
+        namespace: 'nfl-wallet-{{env}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/oidc-policy-customers.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: oidc-api-customers
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: nfl-wallet-api-customers
+  rules:
+    authentication:
+      oidc-rhbk:
+        jwt:
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/oidc-policy-bills.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: oidc-api-bills
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: nfl-wallet-api-bills
+  rules:
+    authentication:
+      oidc-rhbk:
+        jwt:
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
+```
+
+</details>
+
+
+<details>
+<summary>overlays/test/oidc-policy-raiders.yaml <span class="yaml-badge yaml-badge--oidc">OIDC</span></summary>
+
+```yaml
+apiVersion: kuadrant.io/v1
+kind: AuthPolicy
+metadata:
+  name: oidc-api-raiders
+  namespace: nfl-wallet-test
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: nfl-wallet-api-raiders
+  rules:
+    authentication:
+      oidc-rhbk:
+        jwt:
+          issuerUrl: https://nfl-wallet-rhbk-neuroface-nfl-wallet-test.apps.cluster-east.example.com/realms/neuroface
+```
+
+</details>
+
+
+</div>
 
 ## QA-12 — Canary Deployment {#qa-12}
 
@@ -1924,7 +2919,56 @@ flowchart TD
   M -- Error --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `overlays/prod/canary-httproute.yaml` (HTTPRoute), `overlays/prod-east/canary-httproute.yaml` (HTTPRoute), `overlays/prod-west/canary-httproute.yaml` (HTTPRoute), `base-canary/canary-route.yaml` (Route), `base/gateway-route.yaml` (Prod Route)
+<div class="yaml-resources">
+<details>
+<summary>overlays/prod/canary-httproute.yaml <span class="yaml-badge yaml-badge--route">HTTPRoute</span></summary>
+
+```yaml
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: nfl-wallet-webapp-canary
+  namespace: nfl-wallet-prod
+spec:
+  parentRefs:
+  - name: nfl-wallet-gateway
+  hostnames:
+  - "nfl-wallet-canary.apps.cluster-east.example.com"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: webapp
+      port: 5173
+```
+
+</details>
+
+
+<details>
+<summary>base-canary/canary-route.yaml <span class="yaml-badge yaml-badge--route">Route</span></summary>
+
+```yaml
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: nfl-wallet-canary
+spec:
+  host: nfl-wallet-canary.apps.cluster-east.example.com
+  to:
+    kind: Service
+    name: nfl-wallet-gateway-istio
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+```
+
+</details>
+
+
+</div>
 
 ## QA-13 — Resource Scaling {#qa-13}
 
@@ -1951,7 +2995,126 @@ flowchart TD
   R -- No --> FAIL["FAIL"]
 ```
 
-**YAML Resources:** `app-nfl-wallet-acm-cluster-decision.yaml` (rhbk.resources), `kuadrant-system/resource-requirements.yaml` (Authorino + Limitador), `kuadrant-system/gateway-resources.yaml` (Gateway Proxy)
+<div class="yaml-resources">
+<details>
+<summary>app-nfl-wallet-acm-cluster-decision.yaml <span class="yaml-badge yaml-badge--helm">rhbk.resources</span></summary>
+
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: nfl-wallet
+  namespace: openshift-gitops
+spec:
+  generators:
+  - matrix:
+      generators:
+      - clusterDecisionResource:
+          configMapRef: acm-placement
+          labelSelector:
+            matchLabels:
+              cluster.open-cluster-management.io/placement: nfl-wallet-gitops-placement
+          requeueAfterSeconds: 180
+      - list:
+          elements:
+          - env: dev
+            chartVersion: "0.1.3"
+          - env: test
+            chartVersion: "0.1.3"
+          - env: prod
+            chartVersion: "0.1.1"
+  template:
+    metadata:
+      name: 'nfl-wallet-{{env}}-{{name}}'
+    spec:
+      project: default
+      sources:
+      - repoURL: 'https://github.com/maximilianoPizarro/nfl-wallet-gitops.git'
+        targetRevision: HEAD
+        path: 'nfl-wallet/overlays/{{env}}-{{name}}'
+      - repoURL: 'https://maximilianopizarro.github.io/NFL-Wallet'
+        chart: nfl-wallet
+        targetRevision: '{{chartVersion}}'
+      destination:
+        server: '{{server}}'
+        namespace: 'nfl-wallet-{{env}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+```
+
+</details>
+
+
+<details>
+<summary>kuadrant-system/resource-requirements.yaml <span class="yaml-badge yaml-badge--patch">Authorino + Limitador</span></summary>
+
+```yaml
+apiVersion: operator.authorino.kuadrant.io/v1beta2
+kind: Authorino
+metadata:
+  name: authorino
+  namespace: kuadrant-system
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 256Mi
+    limits:
+      cpu: "2"
+      memory: 1Gi
+---
+apiVersion: limitador.kuadrant.io/v1alpha1
+kind: Limitador
+metadata:
+  name: limitador
+  namespace: kuadrant-system
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 250m
+      memory: 128Mi
+    limits:
+      cpu: "1"
+      memory: 256Mi
+```
+
+</details>
+
+
+<details>
+<summary>kuadrant-system/gateway-resources.yaml <span class="yaml-badge yaml-badge--patch">Gateway Proxy</span></summary>
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nfl-wallet-gateway-istio
+  namespace: nfl-wallet-prod
+spec:
+  template:
+    spec:
+      containers:
+      - name: istio-proxy
+        resources:
+          requests:
+            cpu: 500m
+            memory: 256Mi
+          limits:
+            cpu: "2"
+            memory: 1Gi
+```
+
+</details>
+
+
+</div>
 
 ---
 
