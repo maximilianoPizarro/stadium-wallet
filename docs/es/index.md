@@ -1985,11 +1985,71 @@ Para cambiar el dominio, editar el patch en cada overlay correspondiente.
 
 # 13. Plan de Pruebas y Validación (QA) {#pruebas}
 
-Una vez finalizada la sincronización de ArgoCD, el equipo de QA u Operaciones debe ejecutar el siguiente plan de pruebas para certificar el despliegue. Cada caso de prueba incluye un diagrama de flujo mostrando la lógica de validación y los recursos YAML involucrados.
+Una vez finalizada la sincronización de ArgoCD, QA/Operaciones debe ejecutar el **QA Test Plan automatizado** más reciente del repositorio GitOps. Este plan se ejecuta desde el clúster hub y valida east y west en una sola corrida.
 
-| Resumen | | |
-|---------|---|---|
-| **13 Casos de Prueba** | **3 Ambientes** (dev, test, prod) | **2 Clústeres** (East, West) |
+| Resumen | | | |
+|---------|---|---|---|
+| **10 Pruebas Automatizadas** (`qa-test-plan.sh`) | **13 Escenarios Diagramados** (`qa-diagrams`) | **3 Ambientes** (dev, test, prod) | **2 Clústeres** (East, West) |
+
+### 13.1 QA Test Plan Automatizado (Última Versión)
+
+Script fuente: `scripts/qa-test-plan.sh` (del repo `nfl-wallet-gitops`).
+
+```bash
+# Ejecutar todas las pruebas automatizadas
+./scripts/qa-test-plan.sh
+
+# Ejecutar solo pruebas específicas
+./scripts/qa-test-plan.sh QA-05 QA-06
+
+# Omitir verificación TLS
+./scripts/qa-test-plan.sh --insecure
+```
+
+#### Prerrequisitos
+
+| Requisito | Detalle |
+|-----------|---------|
+| `oc` CLI | Autenticado contra el hub (`oc whoami` = hub). Requerido para QA-01 y QA-02 |
+| `curl` | Requerido para pruebas HTTP (QA-03 a QA-10) |
+| Acceso HTTPS saliente | Acceso a rutas east/west/hub `*.apps.<cluster-domain>` |
+| API keys | Los valores por defecto pueden sobrescribirse con variables de entorno |
+
+#### Cobertura Automatizada (QA-01 a QA-10)
+
+| Prueba | Valida | Criterio de Éxito |
+|--------|--------|-------------------|
+| **QA-01** GitOps Sync | Estado de sync/health en ArgoCD | Apps requeridas en `Synced` y `Healthy` |
+| **QA-02** Ambient Mesh | Ausencia de sidecar `istio-proxy` | Pods sin sidecar |
+| **QA-03** Egress ESPN | Alcance de ruta ESPN en test | 200 en ruta pública, o respuesta auth-path que confirme ruta existente |
+| **QA-04** RHDH Portal | Catálogo API + plugin Kuadrant | Verificación manual (`SKIP` en script) |
+| **QA-05** Rate Limiting | Enforcement de `RateLimitPolicy` | Aparece 429 tras cuota, o endpoint sigue alcanzable |
+| **QA-06** AuthPolicy | Enforcement de API key en test/prod | 401/403 sin key, 200 con key |
+| **QA-07** Cross-Cluster | Disponibilidad API/webapp en east/west | HTTP 200 en ambos clústeres |
+| **QA-08** Observability | Grafana + Promxy + query de métricas | Rutas disponibles y datos de métricas |
+| **QA-09** Swagger UI | Endpoints Swagger de 3 APIs | HTTP 200/301 |
+| **QA-10** Load Test | Comportamiento del gateway bajo concurrencia | Tasa de éxito >= 30% y 429 opcional |
+
+#### Variables de Entorno Estándar
+
+```bash
+export EAST_DOMAIN="cluster-64k4b.64k4b.sandbox5146.opentlc.com"
+export WEST_DOMAIN="cluster-7rt9h.7rt9h.sandbox1900.opentlc.com"
+export HUB_DOMAIN="cluster-72nh2.dynamic.redhatworkshops.io"
+export API_KEY_CUSTOMERS="nfl-wallet-customers-key"
+export API_KEY_BILLS="nfl-wallet-bills-key"
+export API_KEY_RAIDERS="nfl-wallet-raiders-key"
+```
+
+#### Versiones de Chart Validadas por QA
+
+| Ambiente | Chart | Login Biométrico | Política OIDC |
+|----------|-------|------------------|---------------|
+| **dev** | `0.1.3` | Habilitado (FHD 1920x1080) | Deshabilitada |
+| **test** | `0.1.3` | Habilitado (FHD 1920x1080) | Habilitada |
+| **prod** | `0.1.1` | Deshabilitado | Deshabilitada |
+
+### 13.2 Validación Extendida con Diagramas (QA-01 a QA-13)
 
 ## QA-01 — GitOps Sync {#qa-01}
 
@@ -2325,11 +2385,11 @@ spec:
 
 ## QA-05 — Rate Limiting {#qa-05}
 
-**429 tras exceder la cuota (110 peticiones)**
+**429 tras exceder la cuota (505 peticiones)**
 
 ```mermaid
 flowchart TD
-  A["Send 110 sequential\ncurl requests with X-Api-Key"] --> B["Count responses:\n200 / 429 / errors"]
+  A["Send 505 sequential\ncurl requests with X-Api-Key"] --> B["Count responses:\n200 / 429 / errors"]
   B --> C{"Got any\n429?"}
   C -- Yes --> P1["PASS: Rate limit active\nat request #N"]
   C -- No --> D{"Any\n200s?"}

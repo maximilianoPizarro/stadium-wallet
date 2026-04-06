@@ -1985,11 +1985,71 @@ To change the domain, edit the patch in each corresponding overlay.
 
 # 13. Test Plan & Validation (QA) {#testing}
 
-Once ArgoCD synchronization is complete, the QA or Operations team must execute the following test plan to certify the deployment. Each test case includes a flow diagram showing the validation logic and the YAML resources involved.
+Once ArgoCD synchronization is complete, QA/Operations must execute the latest **automated QA Test Plan** from the GitOps repository. This test plan is executed from the hub cluster and validates both east and west environments in a single run.
 
-| Summary | | |
-|---------|---|---|
-| **13 Test Cases** | **3 Environments** (dev, test, prod) | **2 Clusters** (East, West) |
+| Summary | | | |
+|---------|---|---|---|
+| **10 Automated Tests** (`qa-test-plan.sh`) | **13 Diagram Scenarios** (`qa-diagrams`) | **3 Environments** (dev, test, prod) | **2 Clusters** (East, West) |
+
+### 13.1 Automated QA Test Plan (Latest)
+
+Script source: `scripts/qa-test-plan.sh` (from `nfl-wallet-gitops`).
+
+```bash
+# Run all automated tests
+./scripts/qa-test-plan.sh
+
+# Run selected tests only
+./scripts/qa-test-plan.sh QA-05 QA-06
+
+# Skip TLS verification
+./scripts/qa-test-plan.sh --insecure
+```
+
+#### Prerequisites
+
+| Requirement | Detail |
+|-------------|--------|
+| `oc` CLI | Authenticated to hub cluster (`oc whoami` = hub). Required for QA-01 and QA-02 |
+| `curl` | Required for all HTTP tests (QA-03 to QA-10) |
+| HTTPS outbound access | Access to east/west/hub `*.apps.<cluster-domain>` routes |
+| API keys | Defaults can be overridden by environment variables |
+
+#### Automated Test Coverage (QA-01 to QA-10)
+
+| Test | Validates | Pass Criteria |
+|------|-----------|---------------|
+| **QA-01** GitOps Sync | ArgoCD app health/sync status | All required apps `Synced` and `Healthy` |
+| **QA-02** Ambient Mesh | No `istio-proxy` sidecar injected | Pods run without sidecar |
+| **QA-03** Egress ESPN | ESPN route reachability in test | 200 on public path, or auth-path response proving route exists |
+| **QA-04** RHDH Portal | API catalog + Kuadrant plugin visibility | Manual verification (`SKIP` in script) |
+| **QA-05** Rate Limiting | Kuadrant `RateLimitPolicy` enforcement | 429 appears after quota, or endpoint remains reachable |
+| **QA-06** AuthPolicy | API key enforcement in test/prod | 401/403 without key, 200 with key |
+| **QA-07** Cross-Cluster | East/west API and webapp availability | HTTP 200 across both clusters |
+| **QA-08** Observability | Grafana + Promxy + metrics query | Routes reachable and metric data returned |
+| **QA-09** Swagger UI | Swagger endpoints for 3 APIs | HTTP 200/301 |
+| **QA-10** Load Test | Gateway behavior under concurrent load | Success rate >= 30% and optional 429 enforcement |
+
+#### Standard Environment Variables
+
+```bash
+export EAST_DOMAIN="cluster-64k4b.64k4b.sandbox5146.opentlc.com"
+export WEST_DOMAIN="cluster-7rt9h.7rt9h.sandbox1900.opentlc.com"
+export HUB_DOMAIN="cluster-72nh2.dynamic.redhatworkshops.io"
+export API_KEY_CUSTOMERS="nfl-wallet-customers-key"
+export API_KEY_BILLS="nfl-wallet-bills-key"
+export API_KEY_RAIDERS="nfl-wallet-raiders-key"
+```
+
+#### Chart Versions Validated by QA
+
+| Environment | Chart | Biometric Login | OIDC Policy |
+|-------------|-------|-----------------|-------------|
+| **dev** | `0.1.3` | Enabled (FHD 1920x1080) | Disabled |
+| **test** | `0.1.3` | Enabled (FHD 1920x1080) | Enabled |
+| **prod** | `0.1.1` | Disabled | Disabled |
+
+### 13.2 Extended Diagram Validation (QA-01 to QA-13)
 
 ## QA-01 — GitOps Sync {#qa-01}
 
@@ -2325,11 +2385,11 @@ spec:
 
 ## QA-05 — Rate Limiting {#qa-05}
 
-**429 after exceeding quota (110 requests)**
+**429 after exceeding quota (505 requests)**
 
 ```mermaid
 flowchart TD
-  A["Send 110 sequential\ncurl requests with X-Api-Key"] --> B["Count responses:\n200 / 429 / errors"]
+  A["Send 505 sequential\ncurl requests with X-Api-Key"] --> B["Count responses:\n200 / 429 / errors"]
   B --> C{"Got any\n429?"}
   C -- Yes --> P1["PASS: Rate limit active\nat request #N"]
   C -- No --> D{"Any\n200s?"}
